@@ -1,0 +1,34 @@
+# 环境变量 / 密钥
+.env
+.env.local
+.env.*.local
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 临时文件
+_tmp/
+temp/
+*.tmp
+*.bak
+*.log
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 测试 / 调试
+__pycache__/
+*.pyc
+node_modules/
+
+# 安全清理临时产物（不提交）
+_backup_before_cleanup/
+_cleanup_links.py
+_scan_links.py
+
+_verify_repo.py

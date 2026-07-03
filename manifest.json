@@ -1,0 +1,23 @@
+{
+    "name": "ARK 客服知识库",
+    "short_name": "ARK知识库",
+    "description": "ARK项目客服快速搜索工具，支持本地话术和公告搜索",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0a0f",
+    "theme_color": "#00d4ff",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%230a0a0f' width='192' height='192' rx='32'/><text y='140' x='50%' text-anchor='middle' font-size='100'>🔍</text></svg>",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a0a0f' width='512' height='512' rx='64'/><text y='380' x='50%' text-anchor='middle' font-size='280'>🔍</text></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml"
+        }
+    ],
+    "categories": ["productivity", "utilities"]
+}
