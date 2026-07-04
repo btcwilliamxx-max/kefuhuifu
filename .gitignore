@@ -32,3 +32,15 @@ _cleanup_links.py
 _scan_links.py
 
 _verify_repo.py
+
+# AI / 一次性调试脚本
+pw_*.py
+pw_*.json
+fix_*.py
+append_*.py
+verify_*.py
+opencc_*.py
+seg_list.py
+fuse_sim.py
+push_*.py
+*_inspect.py
