@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ark-knowledge-base-v4';
+const CACHE_NAME = 'ark-knowledge-base-v5';
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
@@ -23,10 +23,13 @@ self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'GET') return;
 
     const url = new URL(event.request.url);
-    // 缓存 data/ 下所有资源（TXT + 图片）
+
+    // data/ 下资源：永远走网络，绕过浏览器 HTTP cache。
+    // cache: 'no-store' 让每次 fetch 都直击源站，读到 GitHub Pages 最新内容。
+    // 仅在网络挂了时用 SW 缓存兜底（离线浏览已加载过的条目）。
     if (url.pathname.startsWith('/data/')) {
         event.respondWith(
-            fetch(event.request)
+            fetch(event.request, { cache: 'no-store' })
                 .then((response) => {
                     if (response.ok) {
                         const responseClone = response.clone();
@@ -43,7 +46,7 @@ self.addEventListener('fetch', (event) => {
     } else {
         event.respondWith(
             caches.match(event.request).then((cachedResponse) => {
-                const fetchPromise = fetch(event.request).then((networkResponse) => {
+                const fetchPromise = fetch(event.request, { cache: 'no-cache' }).then((networkResponse) => {
                     if (networkResponse.ok && (event.request.url.includes('index.html') || event.request.url.includes('manifest.json') || event.request.url.endsWith('.html'))) {
                         caches.open(CACHE_NAME).then((cache) => {
                             cache.put(event.request, networkResponse.clone());
