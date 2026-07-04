@@ -72,7 +72,7 @@ python -m http.server 8080
 
 ### 改密码
 
-打开 `index.html`，找到这行（大约在第 142 行）：
+打开 `index.html`，找到这行（大约在第 360 行）：
 
 ```js
 const KB_PASSWORD = 'ark2026';
