@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ark-knowledge-base-v3';
+const CACHE_NAME = 'ark-knowledge-base-v4';
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();
