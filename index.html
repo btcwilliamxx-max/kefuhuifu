@@ -438,7 +438,8 @@
         }
         async function initSegmenter() {
             try {
-                const { default: Segment } = await import('https://cdn.jsdelivr.net/npm/segmentit@2.1.10/dist/segmentit.es.min.js');
+                // segmentit@2.0.3 ESM bundle（package 里没有 .es.min.js，且这个 bundle 用命名导出 { Segment }）
+                const { Segment } = await import('https://cdn.jsdelivr.net/npm/segmentit@2.0.3/dist/esm/segmentit.js');
                 segmenter = new Segment();
                 console.log('[分词] 加载完成');
             } catch (e) { console.warn('[分词] 加载失败:', e); segmenter = null; }
@@ -554,7 +555,8 @@
             // 分类（基于源文件）
             const category = FILE_CATEGORIES[sourceFile] || '常见FAQ';
             // 唯一 ID（用于收藏）
-            const id = md5(sourceFile + '|' + keywords.join(' ') + '|' + answerContent.slice(0, 50));
+            // ID 仅基于 sourceFile + keywords（不含答案内容），这样编辑答案不会让收藏静默断联
+            const id = md5(sourceFile + '|' + keywords.join(' '));
             return { id, keywords, tags, answer: answerContent, link, image, source, category, sourceFile, searchText: [...keywords, answerContent].join(' ') };
         }
         function initFuse() {
@@ -634,7 +636,7 @@
             const isFav = favorites.has(record.id);
             const favIcon = isFav ? '★' : '☆';
             const imageHtml = record.image ? `<img class="result-image" src="${escapeHTML(record.image)}" loading="lazy" alt="${escapeHTML(record.keywords.slice(0, 3).join(' '))}" onerror="this.style.display='none'" />` : '';
-            return `<div class="result-item" style="animation-delay: ${index * 0.05}s" data-id="${record.id}"><div class="result-header"><div class="result-meta">${record.tags.map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}</div><div class="result-header-right"><span class="source-file">📄 ${escapeHTML(record.sourceFile)}</span><button class="fav-btn ${isFav ? 'active' : ''}" data-id="${record.id}" title="${isFav ? '取消收藏' : '收藏'}">${favIcon}</button></div></div>${imageHtml}<div class="result-answer">${answerHtml}</div><div class="result-footer"><div class="keywords">${keywordsHTML}</div><div class="action-btns">${linkHTML}<button class="action-btn copy-btn" data-answer="${escapeAttr(record.answer)}">📋 复制答案</button></div></div></div>`;
+            return `<div class="result-item" style="animation-delay: ${Math.min(index, 12) * 0.05}s" data-id="${record.id}"><div class="result-header"><div class="result-meta">${record.tags.map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}</div><div class="result-header-right"><span class="source-file">📄 ${escapeHTML(record.sourceFile)}</span><button class="fav-btn ${isFav ? 'active' : ''}" data-id="${record.id}" title="${isFav ? '取消收藏' : '收藏'}">${favIcon}</button></div></div>${imageHtml}<div class="result-answer">${answerHtml}</div><div class="result-footer"><div class="keywords">${keywordsHTML}</div><div class="action-btns">${linkHTML}<button class="action-btn copy-btn" data-answer="${escapeAttr(record.answer)}">📋 复制答案</button></div></div></div>`;
         }
         // 简单 MD5（用于记录 ID）
         function md5(str) {
