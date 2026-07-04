@@ -547,11 +547,15 @@
             let image = '';
             const imgMatch = block.match(/\[图片\]:\s*([^\n]+)/);
             if (imgMatch) { image = imgMatch[1].trim(); }
+            // 来源（可选，例如某个公告/提案 ID）
+            let source = '';
+            const sourceMatch = block.substring(blockStart, answerStart).match(/\[来源\]:\s*([^\n]+)/);
+            if (sourceMatch) { source = sourceMatch[1].trim(); }
             // 分类（基于源文件）
             const category = FILE_CATEGORIES[sourceFile] || '常见FAQ';
             // 唯一 ID（用于收藏）
             const id = md5(sourceFile + '|' + keywords.join(' ') + '|' + answerContent.slice(0, 50));
-            return { id, keywords, tags, answer: answerContent, link, image, category, sourceFile, searchText: [...keywords, answerContent].join(' ') };
+            return { id, keywords, tags, answer: answerContent, link, image, source, category, sourceFile, searchText: [...keywords, answerContent].join(' ') };
         }
         function initFuse() {
             const options = {
