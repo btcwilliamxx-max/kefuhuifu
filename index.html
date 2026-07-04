@@ -416,11 +416,27 @@
             'favorites':   { icon: '⭐', label: '我的收藏' }
         };
         async function initOpenCC() {
-            try { const converter = await openccConverter; window.convertToSimplified = converter; }
-            catch (e) { console.warn('OpenCC 加载失败，使用原始文本'); window.convertToSimplified = (text) => text; }
+            try {
+                // cn2t.js 是 opencc-js 自带的「简→繁」preset bundle，
+                // 字典已经内联在 JS 里，不需要外部 s2t.json 文件（之前用 .json URL 的方式 404）。
+                await new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js';
+                    s.async = true;
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+                // 变量名 convertToSimplified 沿用旧名以保持 search 调用方不动，
+                // 实际语义是「把 query 转成繁体再去搜」，因为知识库条目以繁中为主。
+                const converter = window.OpenCC.Converter({ from: 'cn', to: 'tw' });
+                window.convertToSimplified = converter;
+                console.log('[繁简转换] 加载完成');
+            } catch (e) {
+                console.warn('OpenCC 加载失败，使用原始文本:', e);
+                window.convertToSimplified = (text) => text;
+            }
         }
-        const openccPromise = new Promise((resolve) => { openccJS.load('https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/').then(() => { openccJS.convertPromise('https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/data/s2t.json').then(converter => { resolve(converter); }); }); });
-        const openccConverter = openccPromise;
         async function initSegmenter() {
             try {
                 const { default: Segment } = await import('https://cdn.jsdelivr.net/npm/segmentit@2.1.10/dist/segmentit.es.min.js');
