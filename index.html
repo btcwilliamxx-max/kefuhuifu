@@ -792,7 +792,7 @@
             const nav = document.getElementById('sidebarNav');
             const counts = countByCategory();
             // 分类列表
-            const cats = ['all', '活动公告', '提案政策', '工作室事务', '常用话术', '产品操作', '常见FAQ', '地址合约'];
+            const cats = ['all', '活动公告', '提案政策', '工作室事务', '常用话术', '产品操作', '常见FAQ', '地址合约', '最新动态'];
             const items = cats.map(cat => {
                 const meta = CATEGORY_META[cat];
                 const count = cat === 'all' ? allRecords.length : (counts[cat] || 0);
