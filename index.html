@@ -598,41 +598,57 @@
                 await displayResults(tagResults, query); return;
             }
             currentTag = null;
-            const simplifiedQuery = window.convertToSimplified(query);
-            const tokens = tokenize(simplifiedQuery);
-            const longTokens = tokens.filter(t => t.length >= 2);
-            let fuseResults = [];
+            // 同时支持简体/繁体 query：Fuse 是字符级 bitap，不做繁简转换，
+            // 所以原 query 和繁化 query 都要跑一遍，取每个 item 的最低 score。
+            // 例：record 是简体「静态燃烧」，繁化 query「靜態燃燒」反而搜不到。
+            const simplifiedQuery = window.convertToSimplified ? window.convertToSimplified(query) : query;
+            const queryVariants = [...new Set([query, simplifiedQuery])];  // 去重
+            const allLongTokens = new Set();
+            for (const v of queryVariants) {
+                for (const t of tokenize(v)) if (t.length >= 2) allLongTokens.add(t);
+            }
             // 收集 Fuse 命中的 item（按 item 记录最低 score，Fuse score 越低越好）
             const matchedItems = new Map();  // id -> best score
-            if (longTokens.length > 1) {
-                for (const token of longTokens) {
-                    const results = fuse.search(token);
-                    results.forEach(r => {
+            const runFuseForQuery = (q) => {
+                const tokens = tokenize(q).filter(t => t.length >= 2);
+                if (tokens.length > 1) {
+                    // multi-token：对每个 token 单独搜，取每个 item 的最低 score
+                    for (const token of tokens) {
+                        const results = fuse.search(token);
+                        results.forEach(r => {
+                            const prev = matchedItems.get(r.item.id);
+                            if (prev === undefined || r.score < prev) {
+                                matchedItems.set(r.item.id, r.score);
+                            }
+                        });
+                    }
+                } else {
+                    fuse.search(q).forEach(r => {
                         const prev = matchedItems.get(r.item.id);
                         if (prev === undefined || r.score < prev) {
                             matchedItems.set(r.item.id, r.score);
                         }
                     });
                 }
-            } else {
-                fuse.search(simplifiedQuery).forEach(r => {
-                    matchedItems.set(r.item.id, r.score);
-                });
-            }
+            };
+            for (const v of queryVariants) runFuseForQuery(v);
             // 过滤 + 转 fuseResults
-            fuseResults = [...matchedItems.entries()]
+            let fuseResults = [...matchedItems.entries()]
                 .filter(([, score]) => score <= 0.35)
                 .map(([id, score]) => ({ item: allRecords.find(r => r.id === id), score }))
                 .sort((a, b) => a.score - b.score);
             // Substring fallback：Fuse 没命中或阈值过滤掉时，扫描 searchText 包含查询字符串的记录
+            // 同样要在简繁两版上做 substring 检查（record 是简繁混用）
             // 保证「任何内容都能搜到」的用户预期
             const foundIds = new Set(fuseResults.map(r => r.item.id));
-            const needle = simplifiedQuery.toLowerCase();
-            for (const rec of allRecords) {
-                if (foundIds.has(rec.id)) continue;
-                if (rec.searchText && rec.searchText.toLowerCase().includes(needle)) {
-                    fuseResults.push({ item: rec, score: 0 });
-                    foundIds.add(rec.id);
+            for (const v of queryVariants) {
+                const needle = v.toLowerCase();
+                for (const rec of allRecords) {
+                    if (foundIds.has(rec.id)) continue;
+                    if (rec.searchText && rec.searchText.toLowerCase().includes(needle)) {
+                        fuseResults.push({ item: rec, score: 0 });
+                        foundIds.add(rec.id);
+                    }
                 }
             }
             if (fuseResults.length > 0) {
