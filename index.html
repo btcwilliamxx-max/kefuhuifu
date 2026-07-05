@@ -569,11 +569,12 @@
             return { id, keywords, tags, answer: answerContent, link, image, source, category, sourceFile, searchText: [...keywords, answerContent].join(' ') };
         }
         function initFuse() {
+            // 用 searchText（keywords + answer 拼接）作为单一搜索字段，
+            // 避免加权 keys 在某字段没匹配时把整体 score 拉爆。
+            // 例：搜「静态燃烧」，keywords 里只有「燃烧」，没「静态」，
+            // 旧版按 keywords:0.7 / answer:0.3 加权后 score≈0.6 > 0.35 阈值被过滤掉。
             const options = {
-                keys: [
-                    { name: 'keywords', weight: 0.7 },
-                    { name: 'answer', weight: 0.3 }
-                ],
+                keys: ['searchText'],
                 includeScore: true,
                 threshold: 0.35,
                 distance: 100,
@@ -601,24 +602,43 @@
             const tokens = tokenize(simplifiedQuery);
             const longTokens = tokens.filter(t => t.length >= 2);
             let fuseResults = [];
+            // 收集 Fuse 命中的 item（按 item 记录最低 score，Fuse score 越低越好）
+            const matchedItems = new Map();  // id -> best score
             if (longTokens.length > 1) {
-                const tokenScores = {};
                 for (const token of longTokens) {
                     const results = fuse.search(token);
                     results.forEach(r => {
-                        if (!tokenScores[r.item] || tokenScores[r.item] < r.score) {
-                            tokenScores[r.item] = r.score;
+                        const prev = matchedItems.get(r.item.id);
+                        if (prev === undefined || r.score < prev) {
+                            matchedItems.set(r.item.id, r.score);
                         }
                     });
                 }
-                fuseResults = Object.entries(tokenScores)
-                    .map(([item, score]) => ({ item, score }))
-                    .sort((a, b) => a.score - b.score)
-                    .filter(r => r.score <= 0.35);
             } else {
-                fuseResults = fuse.search(simplifiedQuery);
+                fuse.search(simplifiedQuery).forEach(r => {
+                    matchedItems.set(r.item.id, r.score);
+                });
             }
-            if (fuseResults.length > 0) { await displayResults(fuseResults.map(r => r.item), query); }
+            // 过滤 + 转 fuseResults
+            fuseResults = [...matchedItems.entries()]
+                .filter(([, score]) => score <= 0.35)
+                .map(([id, score]) => ({ item: allRecords.find(r => r.id === id), score }))
+                .sort((a, b) => a.score - b.score);
+            // Substring fallback：Fuse 没命中或阈值过滤掉时，扫描 searchText 包含查询字符串的记录
+            // 保证「任何内容都能搜到」的用户预期
+            const foundIds = new Set(fuseResults.map(r => r.item.id));
+            const needle = simplifiedQuery.toLowerCase();
+            for (const rec of allRecords) {
+                if (foundIds.has(rec.id)) continue;
+                if (rec.searchText && rec.searchText.toLowerCase().includes(needle)) {
+                    fuseResults.push({ item: rec, score: 0 });
+                    foundIds.add(rec.id);
+                }
+            }
+            if (fuseResults.length > 0) {
+                fuseResults.sort((a, b) => a.score - b.score);
+                await displayResults(fuseResults.map(r => r.item), query);
+            }
             else { displayEmpty('未找到相关内容', '建议更换关键词或去掉标签筛选'); }
         }
         function showAllRecords() { displayResults(allRecords, ''); }
