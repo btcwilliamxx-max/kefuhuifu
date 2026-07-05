@@ -598,49 +598,19 @@
                 await displayResults(tagResults, query); return;
             }
             currentTag = null;
-            // 同时支持简体/繁体 query：Fuse 是字符级 bitap，不做繁简转换，
-            // 所以原 query 和繁化 query 都要跑一遍，取每个 item 的最低 score。
-            // 例：record 是简体「静态燃烧」，繁化 query「靜態燃燒」反而搜不到。
+            // 两段式搜索：
+            //   1) Substring 精确匹配（简繁两版 needle 都查）→ score=0，排在最前
+            //   2) Fuse fuzzy 匹配（用来补充近似命中）→ 按 Fuse score 排序追加
+            //
+            // 为什么不再用 Fuse score 阈值过滤：因为 searchText 字段很长（keywords+answer 拼接），
+            // Fuse 的 score 计算对长字段偏高（例：「静态燃烧」命中 ark-015 score=0.59），
+            // 0.35 阈值会误杀真正精确匹配的 record。
+            // Substring 已经保证「任何内容都能搜到」，Fuse 只用来补充 typo/部分匹配的近似项。
             const simplifiedQuery = window.convertToSimplified ? window.convertToSimplified(query) : query;
-            const queryVariants = [...new Set([query, simplifiedQuery])];  // 去重
-            const allLongTokens = new Set();
-            for (const v of queryVariants) {
-                for (const t of tokenize(v)) if (t.length >= 2) allLongTokens.add(t);
-            }
-            // 收集 Fuse 命中的 item（按 item 记录最低 score，Fuse score 越低越好）
-            const matchedItems = new Map();  // id -> best score
-            const runFuseForQuery = (q) => {
-                const tokens = tokenize(q).filter(t => t.length >= 2);
-                if (tokens.length > 1) {
-                    // multi-token：对每个 token 单独搜，取每个 item 的最低 score
-                    for (const token of tokens) {
-                        const results = fuse.search(token);
-                        results.forEach(r => {
-                            const prev = matchedItems.get(r.item.id);
-                            if (prev === undefined || r.score < prev) {
-                                matchedItems.set(r.item.id, r.score);
-                            }
-                        });
-                    }
-                } else {
-                    fuse.search(q).forEach(r => {
-                        const prev = matchedItems.get(r.item.id);
-                        if (prev === undefined || r.score < prev) {
-                            matchedItems.set(r.item.id, r.score);
-                        }
-                    });
-                }
-            };
-            for (const v of queryVariants) runFuseForQuery(v);
-            // 过滤 + 转 fuseResults
-            let fuseResults = [...matchedItems.entries()]
-                .filter(([, score]) => score <= 0.35)
-                .map(([id, score]) => ({ item: allRecords.find(r => r.id === id), score }))
-                .sort((a, b) => a.score - b.score);
-            // Substring fallback：Fuse 没命中或阈值过滤掉时，扫描 searchText 包含查询字符串的记录
-            // 同样要在简繁两版上做 substring 检查（record 是简繁混用）
-            // 保证「任何内容都能搜到」的用户预期
-            const foundIds = new Set(fuseResults.map(r => r.item.id));
+            const queryVariants = [...new Set([query, simplifiedQuery])];  // 去重，简繁两版都要查
+            const fuseResults = [];
+            const foundIds = new Set();
+            // Pass 1: substring 精确匹配（保证任何内容都能搜到）
             for (const v of queryVariants) {
                 const needle = v.toLowerCase();
                 for (const rec of allRecords) {
@@ -649,6 +619,18 @@
                         fuseResults.push({ item: rec, score: 0 });
                         foundIds.add(rec.id);
                     }
+                }
+            }
+            // Pass 2: Fuse fuzzy 补充（multi-token 拆词搜，每个 token 单独跑）
+            for (const v of queryVariants) {
+                const tokens = tokenize(v).filter(t => t.length >= 2);
+                const queries = tokens.length > 1 ? tokens : [v];
+                for (const q of queries) {
+                    fuse.search(q).forEach(r => {
+                        if (foundIds.has(r.item.id)) return;
+                        fuseResults.push(r);
+                        foundIds.add(r.item.id);
+                    });
                 }
             }
             if (fuseResults.length > 0) {
