@@ -110,6 +110,13 @@
         .result-item { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: all 0.3s ease; animation: fadeInUp 0.4s ease; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .result-item:hover { border-color: rgba(0, 212, 255, 0.3); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+        /* 最新动态分类：公告 + 嵌套 Q&A */
+        .latest-announcement-wrapper { margin-bottom: 16px; }
+        .latest-announcement-wrapper .result-item { border-left: 3px solid var(--accent); }
+        .latest-qa-title { color: var(--text-secondary); font-size: 0.95rem; font-weight: 600; margin: 24px 0 12px 4px; padding-left: 8px; border-left: 2px solid rgba(0, 212, 255, 0.3); }
+        .latest-qa-title .latest-qa-count { font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 6px; }
+        .latest-qa-list .result-item { border-left: 2px solid rgba(255, 255, 255, 0.1); margin-left: 16px; padding: 18px 20px; }
+        .latest-qa-list .result-item:hover { border-left-color: var(--accent); }
         .result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .result-meta { display: flex; gap: 8px; flex-wrap: wrap; }
         .tag { padding: 4px 10px; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.75rem; color: var(--accent); border: 1px solid rgba(0, 212, 255, 0.2); }
@@ -397,11 +404,12 @@
         const PLACEHOLDERS = ['输入关键词搜索，如 "质押教程"', '输入 #标签 筛选，如 #活动', '可直接粘贴任意网址搜索，如 https://example.com/xxx', '支持繁体中文，如 "錢包"'];
         let placeholderIndex = 0; let searchInput;
         // 知识库文件清单（按分类）
-        const FILES = ['活动公告.txt', '提案政策.txt', '工作室事务.txt', '常用话术.txt', '产品操作.txt', '常见FAQ.txt', '地址合约.txt'];
+        const FILES = ['活动公告.txt', '提案政策.txt', '工作室事务.txt', '常用话术.txt', '产品操作.txt', '常见FAQ.txt', '地址合约.txt', '最新动态.txt'];
         const FILE_CATEGORIES = {
             '活动公告.txt': '活动公告', '提案政策.txt': '提案政策', '工作室事务.txt': '工作室事务',
             '常用话术.txt': '常用话术', '产品操作.txt': '产品操作',
-            '常见FAQ.txt': '常见FAQ', '地址合约.txt': '地址合约'
+            '常见FAQ.txt': '常见FAQ', '地址合约.txt': '地址合约',
+            '最新动态.txt': '最新动态'
         };
         const CATEGORY_META = {
             'all':         { icon: '📋', label: '全部内容' },
@@ -412,6 +420,7 @@
             '产品操作':     { icon: '📱', label: '产品操作' },
             '常见FAQ':     { icon: '❓', label: '常见 FAQ' },
             '地址合约':     { icon: '💰', label: '地址合约' },
+            '最新动态':     { icon: '📢', label: '最新动态' },
             'favorites':   { icon: '⭐', label: '我的收藏' }
         };
         async function initOpenCC() {
@@ -614,6 +623,10 @@
         }
         function showAllRecords() { displayResults(allRecords, ''); }
         async function displayResults(records, query = '') {
+            // 「最新动态」分类：按 [来源] 分组，公告在上、Q&A 嵌套在下面
+            if (currentCategory === '最新动态') {
+                return displayLatestNews(records, query);
+            }
             const container = document.getElementById('resultsContainer');
             const statsBar = document.getElementById('statsBar');
             if (records.length === 0) {
@@ -624,6 +637,53 @@
             document.getElementById('resultsCount').textContent = `找到 ${records.length} 条结果`;
             const htmlResults = records.map((record, index) => createResultHTML(record, query, index));
             container.innerHTML = htmlResults.join('');
+            attachResultListeners();
+        }
+        // 最新动态分类：按 [来源] 分组渲染，公告（含 [链接] 字段）作 header，Q&A 嵌套展示
+        async function displayLatestNews(records, query = '') {
+            const container = document.getElementById('resultsContainer');
+            const statsBar = document.getElementById('statsBar');
+            if (records.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">还没有最新动态</div><div class="empty-hint">下一条公告发布后会出现在这里</div></div>`;
+                statsBar.style.display = 'none'; return;
+            }
+            // 按 [来源] 分组
+            const groups = new Map();
+            for (const r of records) {
+                const src = r.source || '_root';
+                if (!groups.has(src)) groups.set(src, []);
+                groups.get(src).push(r);
+            }
+            // 渲染：每个组先放公告（含 [链接] 字段的），再放 Q&A
+            const htmlParts = [];
+            let total = 0;
+            for (const [src, entries] of groups) {
+                const announcement = entries.find(e => e.link);
+                const qas = entries.filter(e => !e.link);
+                if (announcement) {
+                    htmlParts.push(`<div class="latest-announcement-wrapper">${createResultHTML(announcement, query, total)}</div>`);
+                    total++;
+                }
+                if (qas.length > 0) {
+                    const qaTitle = src === '_root' ? '' : `<h3 class="latest-qa-title">💬 关联问答 <span class="latest-qa-count">${qas.length} 条</span></h3>`;
+                    htmlParts.push(qaTitle);
+                    htmlParts.push('<div class="latest-qa-list">');
+                    for (const qa of qas) {
+                        htmlParts.push(createResultHTML(qa, query, total));
+                        total++;
+                    }
+                    htmlParts.push('</div>');
+                } else if (!announcement) {
+                    // 只有 Q&A 没有公告的情况
+                    for (const qa of entries) {
+                        htmlParts.push(createResultHTML(qa, query, total));
+                        total++;
+                    }
+                }
+            }
+            statsBar.style.display = 'flex';
+            document.getElementById('resultsCount').textContent = `找到 ${total} 条结果`;
+            container.innerHTML = htmlParts.join('');
             attachResultListeners();
         }
         function createResultHTML(record, query, index) {

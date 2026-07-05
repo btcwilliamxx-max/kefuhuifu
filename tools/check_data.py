@@ -23,6 +23,7 @@ from pathlib import Path
 EXPECTED_FILES = [
     '活动公告.txt', '提案政策.txt', '工作室事务.txt',
     '常用话术.txt', '产品操作.txt', '常见FAQ.txt', '地址合约.txt',
+    '最新动态.txt',
 ]
 
 
