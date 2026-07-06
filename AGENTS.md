@@ -6,7 +6,7 @@
 ## 项目简介
 
 - **性质**：ARK 项目客服知识库静态站，部署在 https://arkie.cc.cd（GitHub Pages + 自定义域）
-- **存储**：所有内容在 `data/*.txt`，7 个分类文件，无数据库
+- **存储**：所有内容在 `data/*.txt`，8 个分类文件，无数据库
 - **入口**：`index.html`（内含全部 JS / CSS）
 
 ## 文件结构
@@ -26,6 +26,7 @@ kefuhuifu/
 │   ├── 产品操作.txt
 │   ├── 常见FAQ.txt
 │   ├── 地址合约.txt
+│   ├── 最新动态.txt        ← 公告聚合（按 [来源] 字段嵌套 Q&A 渲染）
 │   └── _announcements.json # 公告索引（按时间顺序）
 └── tools/
     └── check_data.py       # 数据完整性检查（分隔符等）
