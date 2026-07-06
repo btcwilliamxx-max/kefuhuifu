@@ -99,7 +99,33 @@ Append 后用 `tools/check_data.py` 验证。
 1. `python tools/check_data.py` — 所有分隔符 OK
 2. `git diff data/` 只看到该条新增
 3. push 后等 1-2 分钟
-4. Playwright 实测：搜关键词 + 看 sidebar 计数
+4. **看 GitHub Deployments 状态**（不是只看 push 输出）：
+   - repo 主页面 → "X deployments" 链接 / Settings → Pages → View deployments
+   - 红 X = deploy 失败 ≠ push 失败；push 早就成功了
+5. Playwright 实测：搜关键词 + 看 sidebar 计数
+   - ⚠️ arkie.cc.cd (DNSHE) 域名不稳 + GitHub Pages 强制 301 重定向到该域名，浏览器实测不可靠
+   - fallback：git log + 本地 check_data.py，不要纯靠浏览器
+
+## GitHub Pages deploy 失败修复（2026-07-07 经验）
+
+**不要先怀疑 DNS！** DNSHE 解析失败是 deploy 失败的**次生现象**（build 卡住 → CDN 没新版本 → DNS 查不到）。
+
+**修复顺序**：
+1. 先看 GitHub Deployments 是不是红 X
+2. **方案 A**：重试（empty commit + push / Re-run jobs）— 偶发失败
+3. **方案 B**：Pages Settings 重置（**用户验证有效**）
+   - Source 切到 None → Save
+   - 重新选 Deploy from a branch → main/root → Save
+   - Custom domain 重新输入 → Save
+   - 等 DNS 校验通过
+4. **方案 C**：重建仓库（终极方案，B 无效时用）
+
+DNS 自检（PowerShell）：
+```powershell
+Resolve-DnsName arkie.cc.cd -Type A
+nslookup arkie.cc.cd 8.8.8.8
+```
+正常：GitHub Pages IP `185.199.108-111.153`；异常：`198.18.x.x` 黑洞 IP。
 
 ## 调试 / 一次性脚本
 
