@@ -1065,7 +1065,7 @@
             const queryVariants = [...new Set([query, simplifiedQuery])];
             const foundIds = new Set();
             const hits = [];
-            // Pass 1: substring 精确匹配
+            // Pass 1: substring 精确匹配（score 强制为 0，最高优先级）
             for (const v of queryVariants) {
                 const needle = v.toLowerCase();
                 for (const rec of allRecords) {
@@ -1078,15 +1078,13 @@
                 }
             }
             // Pass 2: 多策略切词 + Fuse 模糊
-            // 关键修复：不再只依赖 segmentit，加标点切 + 2字 n-gram 滑窗
-            // 解决 segmentit 切不出 token 时（如"我的AI作品..."整个被认成一个 token）Fuse 整句搜 0 命中的问题
+            // 用 Map 收集每条记录的 best score，最后按 score 排序取 top-N
+            // 避免 n-gram 太激进撞到一堆不相关条目都被收进来
+            const bestScore = new Map(); // id → {record, score}
             const subQueries = new Set();
             for (const v of queryVariants) {
-                // 标点 / 空格切
                 v.split(/[\s,，。？！、；:：]+/).forEach(p => { if (p.length >= 2) subQueries.add(p); });
-                // segmentit 切
                 tokenize(v).filter(t => t.length >= 2).forEach(t => subQueries.add(t));
-                // 2字 n-gram 滑窗（覆盖 segmentit 切不出的情况）
                 for (let i = 0; i <= v.length - 2; i++) {
                     subQueries.add(v.substr(i, 2));
                 }
@@ -1095,10 +1093,19 @@
                 const results = fuse.search(q);
                 for (const r of results) {
                     if (foundIds.has(r.item.id)) continue;
-                    hits.push(r.item);
-                    foundIds.add(r.item.id);
-                    if (hits.length >= n) return hits;
+                    const existing = bestScore.get(r.item.id);
+                    if (!existing || r.score < existing.score) {
+                        bestScore.set(r.item.id, { record: r.item, score: r.score });
+                    }
                 }
+            }
+            // 按 best score 排序，取 top-N
+            const sorted = [...bestScore.values()].sort((a, b) => a.score - b.score);
+            for (const entry of sorted) {
+                if (foundIds.has(entry.record.id)) continue;
+                hits.push(entry.record);
+                foundIds.add(entry.record.id);
+                if (hits.length >= n) break;
             }
             return hits;
         }
