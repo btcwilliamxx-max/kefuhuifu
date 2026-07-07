@@ -1077,18 +1077,27 @@
                     }
                 }
             }
-            // Pass 2: Fuse 模糊补充
+            // Pass 2: 多策略切词 + Fuse 模糊
+            // 关键修复：不再只依赖 segmentit，加标点切 + 2字 n-gram 滑窗
+            // 解决 segmentit 切不出 token 时（如"我的AI作品..."整个被认成一个 token）Fuse 整句搜 0 命中的问题
+            const subQueries = new Set();
             for (const v of queryVariants) {
-                const tokens = tokenize(v).filter(t => t.length >= 2);
-                const queries = tokens.length > 1 ? tokens : [v];
-                for (const q of queries) {
-                    const results = fuse.search(q);
-                    for (const r of results) {
-                        if (foundIds.has(r.item.id)) continue;
-                        hits.push(r.item);
-                        foundIds.add(r.item.id);
-                        if (hits.length >= n) return hits;
-                    }
+                // 标点 / 空格切
+                v.split(/[\s,，。？！、；:：]+/).forEach(p => { if (p.length >= 2) subQueries.add(p); });
+                // segmentit 切
+                tokenize(v).filter(t => t.length >= 2).forEach(t => subQueries.add(t));
+                // 2字 n-gram 滑窗（覆盖 segmentit 切不出的情况）
+                for (let i = 0; i <= v.length - 2; i++) {
+                    subQueries.add(v.substr(i, 2));
+                }
+            }
+            for (const q of subQueries) {
+                const results = fuse.search(q);
+                for (const r of results) {
+                    if (foundIds.has(r.item.id)) continue;
+                    hits.push(r.item);
+                    foundIds.add(r.item.id);
+                    if (hits.length >= n) return hits;
                 }
             }
             return hits;
