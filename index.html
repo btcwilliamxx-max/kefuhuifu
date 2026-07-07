@@ -93,6 +93,85 @@
             .quicklink-card { flex: 1 1 100%; max-width: none; }
         }
         .tag-loading { color: var(--text-muted); font-size: 0.875rem; padding: 10px 0; }
+
+        /* 智能搜索 (AI) */
+        .smart-search-container { position: relative; margin-bottom: 16px; }
+        .smart-search-container .search-box {
+            border-color: rgba(139, 92, 246, 0.25);
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(139, 92, 246, 0.06) 100%);
+            padding-left: 54px;
+            padding-right: 60px;
+        }
+        .smart-search-container .search-box:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
+        }
+        .smart-search-icon {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+            font-size: 1.15rem; pointer-events: none;
+        }
+        .smart-mode-tag {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: #fff; font-size: 0.7rem; font-weight: 700;
+            padding: 4px 10px; border-radius: 6px; pointer-events: none;
+            letter-spacing: 0.5px;
+        }
+        .smart-search-hint {
+            font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: -8px 0 20px;
+        }
+        .smart-results { display: none; margin-bottom: 30px; }
+        .smart-results.show { display: block; }
+        .smart-section-title {
+            font-size: 0.85rem; color: var(--text-secondary); margin: 4px 0 10px;
+            font-weight: 600; display: flex; align-items: center; gap: 8px;
+        }
+        .smart-kb-hits {
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; margin-bottom: 16px;
+        }
+        .smart-kb-item {
+            padding: 12px 0; border-bottom: 1px solid var(--border);
+        }
+        .smart-kb-item:last-child { border-bottom: none; }
+        .smart-kb-title {
+            font-size: 0.85rem; color: var(--accent); margin-bottom: 6px; font-weight: 500;
+        }
+        .smart-kb-body {
+            font-size: 0.88rem; color: var(--text-primary); line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .smart-ai-box {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(0, 212, 255, 0.05) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.35);
+            border-radius: 12px; padding: 18px;
+        }
+        .smart-ai-content {
+            font-size: 0.95rem; line-height: 1.7; color: var(--text-primary);
+            white-space: pre-wrap; margin-bottom: 12px;
+        }
+        .smart-ai-warn {
+            font-size: 0.75rem; color: #fbbf24; padding-top: 10px;
+            border-top: 1px solid rgba(251, 191, 36, 0.2);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .smart-no-kb {
+            background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444; padding: 12px 16px; border-radius: 8px;
+            font-size: 0.85rem; margin-bottom: 16px;
+        }
+        .smart-loading {
+            padding: 30px 20px; text-align: center; color: var(--text-muted);
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 12px; font-size: 0.9rem;
+        }
+        .smart-error {
+            background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444; padding: 12px 16px; border-radius: 8px;
+            font-size: 0.85rem; line-height: 1.6;
+        }
+        .smart-error-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+
         .search-container { position: relative; margin-bottom: 24px; }
         .search-box { width: 100%; padding: 18px 24px; padding-left: 54px; font-size: 1rem; font-family: inherit; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; color: var(--text-primary); outline: none; transition: all 0.3s ease; }
         .search-box::placeholder { color: var(--text-muted); }
@@ -350,6 +429,13 @@
             <input type="text" class="search-box" id="searchInput" placeholder="输入关键词搜索，或输入 #标签 筛选...">
             <div class="shortcuts"><span class="key-hint">Ctrl+K</span></div>
         </div>
+        <div class="smart-search-container">
+            <span class="smart-search-icon">🤖</span>
+            <input type="text" class="search-box smart-search-box" id="smartSearchInput" placeholder="智能搜索：粘贴客户原话，AI 找话术 + 解读公告">
+            <div class="smart-mode-tag">AI</div>
+        </div>
+        <div class="smart-search-hint">智能搜索基于知识库内容生成回复，遇到无法回答会标注"KB 无相关"</div>
+        <div id="smartResults" class="smart-results"></div>
         <div class="tags-bar" id="tagsBar">
             <span class="tag-loading">加载中...</span>
         </div>
@@ -935,6 +1021,7 @@
                 if (e.key === 'Escape') { searchInput.value = ''; currentTag = null; setCategory('all'); }
                 if (e.key === 'Enter') { clearTimeout(debounceTimer); performSearch(searchInput.value); }
             });
+            bindSmartSearch();
             document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); searchInput.focus(); } });
             // 侧边栏：移动端汉堡菜单
             document.getElementById('sidebarHandle').addEventListener('click', openSidebar);
@@ -945,6 +1032,137 @@
             document.getElementById('versionTimestamp').textContent = `数据版本: ${new Date().toLocaleString('zh-CN')}`;
         }
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+
+        // ============ 智能搜索 (AI) ============
+        // Cloudflare Worker → 智谱 GLM-4.7-Flash (RAG)
+        const SMART_WORKER_URL = 'https://white-recipe-de08ark-kb-search.btcwilliamxx.workers.dev';
+        let smartInput, smartResultsEl, smartDebounceTimer;
+
+        function bindSmartSearch() {
+            smartInput = document.getElementById('smartSearchInput');
+            smartResultsEl = document.getElementById('smartResults');
+            smartInput.addEventListener('input', debounceSmartSearch);
+            smartInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { clearSmartSearch(); }
+                if (e.key === 'Enter') { clearTimeout(smartDebounceTimer); performSmartSearch(smartInput.value); }
+            });
+        }
+
+        function debounceSmartSearch() {
+            clearTimeout(smartDebounceTimer);
+            smartDebounceTimer = setTimeout(() => performSmartSearch(smartInput.value), 500);
+        }
+
+        function clearSmartSearch() {
+            smartInput.value = '';
+            smartResultsEl.classList.remove('show');
+            smartResultsEl.innerHTML = '';
+        }
+
+        // 复用现有 Fuse + substring 逻辑，取 top-N 命中
+        function getTopKBHits(query, n) {
+            const simplifiedQuery = window.convertToSimplified ? window.convertToSimplified(query) : query;
+            const queryVariants = [...new Set([query, simplifiedQuery])];
+            const foundIds = new Set();
+            const hits = [];
+            // Pass 1: substring 精确匹配
+            for (const v of queryVariants) {
+                const needle = v.toLowerCase();
+                for (const rec of allRecords) {
+                    if (foundIds.has(rec.id)) continue;
+                    if (rec.searchText && rec.searchText.toLowerCase().includes(needle)) {
+                        hits.push(rec);
+                        foundIds.add(rec.id);
+                        if (hits.length >= n) return hits;
+                    }
+                }
+            }
+            // Pass 2: Fuse 模糊补充
+            for (const v of queryVariants) {
+                const tokens = tokenize(v).filter(t => t.length >= 2);
+                const queries = tokens.length > 1 ? tokens : [v];
+                for (const q of queries) {
+                    const results = fuse.search(q);
+                    for (const r of results) {
+                        if (foundIds.has(r.item.id)) continue;
+                        hits.push(r.item);
+                        foundIds.add(r.item.id);
+                        if (hits.length >= n) return hits;
+                    }
+                }
+            }
+            return hits;
+        }
+
+        async function performSmartSearch(query) {
+            if (!query.trim()) {
+                smartResultsEl.classList.remove('show');
+                smartResultsEl.innerHTML = '';
+                return;
+            }
+
+            smartResultsEl.classList.add('show');
+            smartResultsEl.innerHTML = '<div class="smart-loading">🤖 AI 思考中...（首次冷启动约 2-3 秒）</div>';
+
+            const kbHits = getTopKBHits(query, 3);
+
+            try {
+                const resp = await fetch(SMART_WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: query,
+                        contexts: kbHits.map(r => ({
+                            title: r.keywords.slice(0, 5).join(' '),
+                            body: r.answer
+                        }))
+                    })
+                });
+
+                if (!resp.ok) {
+                    const errText = await resp.text();
+                    throw new Error(`Worker ${resp.status}: ${errText.slice(0, 200)}`);
+                }
+                const data = await resp.json();
+                const answer = data.answer || '（模型无回复）';
+                renderSmartResult(query, kbHits, answer);
+            } catch (e) {
+                smartResultsEl.innerHTML = `<div class="smart-error">⚠️ AI 调用失败<div class="smart-error-hint">${escapeHTML(e.message)}<br>检查 Worker URL 是否可达，或网络是否通畅</div></div>`;
+            }
+        }
+
+        function renderSmartResult(query, kbHits, answer) {
+            const noKb = kbHits.length === 0;
+
+            // KB 原文 section
+            let kbSection;
+            if (noKb) {
+                kbSection = `<div class="smart-no-kb">📭 知识库无相关条目，AI 将基于通用理解回复（仅供参考，不保证准确）</div>`;
+            } else {
+                kbSection = `<div class="smart-kb-hits">
+                    <div class="smart-section-title">📚 KB 话术原文（${kbHits.length} 条命中）</div>
+                    ${kbHits.map((r, i) => {
+                        const titleTags = r.tags.length > 0
+                            ? ' ' + r.tags.slice(0, 3).map(t => `<span style="color:var(--text-muted);font-size:0.75rem;font-weight:normal;">${escapeHTML(t)}</span>`).join(' ')
+                            : '';
+                        const body = r.answer.length > 280 ? r.answer.slice(0, 280) + '...' : r.answer;
+                        return `<div class="smart-kb-item">
+                            <div class="smart-kb-title">${i + 1}. ${escapeHTML(r.keywords.slice(0, 5).join(' '))}${titleTags}</div>
+                            <div class="smart-kb-body">${escapeHTML(body)}</div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+            }
+
+            // AI 解读 section
+            const aiSection = `<div class="smart-ai-box">
+                <div class="smart-section-title">🤖 AI 解读</div>
+                <div class="smart-ai-content">${escapeHTML(answer).replace(/\n/g, '<br>')}</div>
+                <div class="smart-ai-warn">⚠️ 内容由 AI 生成，仅供参考。客服使用前请人工核对</div>
+            </div>`;
+
+            smartResultsEl.innerHTML = kbSection + aiSection;
+        }
         // ============ 入口：根据密码决定是否启动主程序 ============
         if (isAuthed()) {
             document.getElementById('loginOverlay').classList.add('hidden');
