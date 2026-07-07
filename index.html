@@ -1008,11 +1008,29 @@
         }
         let debounceTimer;
         function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { performSearch(searchInput.value); }, 300); }
+        // ============ 智能搜索专用 Fuse（加权 keys） ============
+        // 关键词 0.7 + 答案 0.3，解决 Fuse.search 整句 0 命中 / 弱匹配问题
+        // 让"抖音"等在 answer 字段的关键词也能浮上来
+        let smartFuse = null;
+        function initSmartFuse() {
+            smartFuse = new Fuse(allRecords, {
+                keys: [
+                    { name: 'keywords', weight: 0.7 },
+                    { name: 'answer', weight: 0.3 }
+                ],
+                includeScore: true,
+                threshold: 0.45,
+                distance: 200,
+                minMatchCharLength: 2,
+                ignoreLocation: true
+            });
+        }
         async function startApp() {
             searchInput = document.getElementById('searchInput');
             await initOpenCC();
             await initSegmenter();
             await loadData();
+            initSmartFuse();
             loadFavorites();
             renderSidebar();
             generateHotKeywords();
@@ -1090,7 +1108,7 @@
                 }
             }
             for (const q of subQueries) {
-                const results = fuse.search(q);
+                const results = smartFuse.search(q);
                 for (const r of results) {
                     if (foundIds.has(r.item.id)) continue;
                     const existing = bestScore.get(r.item.id);
