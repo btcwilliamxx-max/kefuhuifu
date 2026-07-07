@@ -1138,7 +1138,7 @@
             smartResultsEl.classList.add('show');
             smartResultsEl.innerHTML = '<div class="smart-loading">🤖 AI 思考中...（首次冷启动约 2-3 秒）</div>';
 
-            const kbHits = getTopKBHits(query, 5);
+            const kbHits = getTopKBHits(query, 8);
 
             try {
                 const resp = await fetch(SMART_WORKER_URL, {
