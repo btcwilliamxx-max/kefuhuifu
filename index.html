@@ -196,6 +196,24 @@
         .latest-qa-title .latest-qa-count { font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-left: 6px; }
         .latest-qa-list .result-item { border-left: 2px solid rgba(255, 255, 255, 0.1); margin-left: 16px; padding: 18px 20px; }
         .latest-qa-list .result-item:hover { border-left-color: var(--accent); }
+        /* 主条目 + 子条目 树状折叠列表 */
+        .tree-children { margin-top: 14px; padding: 14px 14px 6px; background: rgba(0, 212, 255, 0.03); border: 1px dashed rgba(0, 212, 255, 0.25); border-radius: 12px; }
+        .tree-children-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 4px; color: var(--text-secondary); font-size: 0.85rem; }
+        .tree-children-header .tree-toggle { background: none; border: 1px solid rgba(0, 212, 255, 0.3); color: var(--accent); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; }
+        .tree-children-header .tree-toggle:hover { background: rgba(0, 212, 255, 0.1); }
+        .tree-children.collapsed .tree-child-list { display: none; }
+        .tree-child-list { display: flex; flex-direction: column; gap: 8px; }
+        .tree-child { background: var(--bg-tertiary); border: 1px solid rgba(0, 212, 255, 0.15); border-radius: 10px; padding: 12px 14px; font-size: 0.85rem; transition: all 0.2s; }
+        .tree-child:hover { border-color: var(--accent); background: rgba(0, 212, 255, 0.06); }
+        .tree-child-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .tree-child-icon { color: var(--accent); font-size: 0.95rem; flex-shrink: 0; }
+        .tree-child-title { font-weight: 600; color: var(--text-primary); font-size: 0.85rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tree-child-tag { padding: 2px 8px; background: rgba(0, 212, 255, 0.1); border-radius: 4px; font-size: 0.7rem; color: var(--accent); flex-shrink: 0; }
+        .tree-child-body { color: var(--text-secondary); line-height: 1.65; font-size: 0.825rem; white-space: pre-wrap; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .tree-child.expanded .tree-child-body { max-height: 1200px; overflow-y: auto; margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
+        .tree-child-body a { color: var(--accent); text-decoration: none; }
+        .tree-child-body a:hover { text-decoration: underline; }
+        .tree-child-body .contract-address { display: inline-flex; align-items: center; gap: 6px; background: rgba(0, 212, 255, 0.1); padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent); word-break: break-all; }
         .result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .result-meta { display: flex; gap: 8px; flex-wrap: wrap; }
         .tag { padding: 4px 10px; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.75rem; color: var(--accent); border: 1px solid rgba(0, 212, 255, 0.2); }
@@ -649,10 +667,27 @@
             if (sourceMatch) { source = sourceMatch[1].trim(); }
             // 分类（基于源文件）
             const category = FILE_CATEGORIES[sourceFile] || '常见FAQ';
-            // 唯一 ID（用于收藏）
-            // ID 仅基于 sourceFile + keywords（不含答案内容），这样编辑答案不会让收藏静默断联
-            const id = md5(sourceFile + '|' + keywords.join(' '));
-            return { id, keywords, tags, answer: answerContent, link, image, source, category, sourceFile, searchText: [...keywords, answerContent].join(' ') };
+            // 子条目 ID（可选，显式 ID；同一个 KB 里只能用一次）
+            let childId = '';
+            const childIdMatch = block.substring(blockStart, answerStart).match(/\[子条目 ID\]:\s*([^\s\n]+)/);
+            if (childIdMatch) { childId = childIdMatch[1].trim(); }
+            // 父条目 ID（可选；子条目用它反向指回主条目）
+            let parentId = '';
+            const parentIdMatch = block.substring(blockStart, answerStart).match(/\[父条目 ID\]:\s*([^\s\n]+)/);
+            if (parentIdMatch) { parentId = parentIdMatch[1].trim(); }
+            // 主条目下面挂载的子条目 ID 清单（可选）
+            let childIds = [];
+            const childrenMatch = block.substring(blockStart, answerStart).match(/\[子条目\]:\s*([^\n]+)/);
+            if (childrenMatch) {
+                childIds = childrenMatch[1].trim().split(/[\s,，；;]+/).filter(s => s);
+            }
+            // 唯一 ID（用于收藏 + 子条目关联）
+            // 优先级：有 [子条目 ID] 用它；有 [父条目 ID] 也用它（让父清单里的 id 能对上）；
+            // 否则 fallback 到 sourceFile + keywords 的 md5，保证收藏不会因编辑答案而断联
+            let id;
+            if (childId) id = childId;
+            else id = md5(sourceFile + '|' + keywords.join(' '));
+            return { id, childId, parentId, childIds, keywords, tags, answer: answerContent, link, image, source, category, sourceFile, searchText: [...keywords, answerContent].join(' ') };
         }
         function initFuse() {
             // 用 searchText（keywords + answer 拼接）作为单一搜索字段，
@@ -737,11 +772,74 @@
                 container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">未找到相关内容</div><div class="empty-hint">建议更换关键词或去掉标签筛选</div></div>`;
                 statsBar.style.display = 'none'; return;
             }
+            // 主条目 + 子条目 树状渲染：把 [父条目 ID] 非空的 entry 从主结果中过滤掉，
+            // 它们只挂载在主条目卡片下面出现。childLookup 用全量 allRecords 作底，保证即使父/子不在同一搜索结果里也能挂得上。
+            const childLookup = new Map();
+            for (const r of allRecords) {
+                if (r.parentId && r.childId) childLookup.set(r.childId, r);
+            }
+            const visibleRecords = records.filter(r => !r.parentId).reverse();
+            // .reverse() — 新的条目显示在上面（KB txt 用 --- append, 文件末尾即新条目, 反转后新条目靠前）
+            // 子条目通过 childLookup 挂载, 顺序不受影响
+            // 如果过滤后结果为空，但原始搜到了子条目，单独展示子条目并提示「这是某主条目下的子流程」
+            if (visibleRecords.length === 0 && records.length > 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">📎</div><div class="empty-title">命中的是主条目下的子流程</div><div class="empty-hint">请搜索主条目关键词（如「非实体工作室」）以查看完整流程</div></div>`;
+                statsBar.style.display = 'none'; return;
+            }
             statsBar.style.display = 'flex';
-            document.getElementById('resultsCount').textContent = `找到 ${records.length} 条结果`;
-            const htmlResults = records.map((record, index) => createResultHTML(record, query, index));
+            document.getElementById('resultsCount').textContent = `找到 ${visibleRecords.length} 条结果`;
+            const htmlResults = visibleRecords.map((record, index) => createResultHTML(record, query, index, childLookup));
             container.innerHTML = htmlResults.join('');
             attachResultListeners();
+            attachTreeListeners();
+        }
+        // 单条子卡片（挂在主条目卡片下）
+        function createChildResultHTML(child) {
+            const answerHtml = processAnswer(child.answer);
+            const titleTxt = (child.source ? `[${escapeHTML(child.source)}] ` : '') + child.keywords.slice(0, 4).join(' / ');
+            return `<div class="tree-child" data-id="${escapeAttr(child.id)}">
+                <div class="tree-child-header">
+                    <span class="tree-child-icon">📎</span>
+                    <span class="tree-child-title">${titleTxt}</span>
+                    <button class="action-btn copy-btn" data-answer="${escapeAttr(child.answer)}">📋 复制</button>
+                </div>
+                <div class="tree-child-body">${answerHtml}</div>
+            </div>`;
+        }
+        // 树状挂载：主条目下面挂所有 childIds 对应的子卡片
+        function createChildrenTreeHTML(mainRecord, childLookup) {
+            if (!mainRecord.childIds || mainRecord.childIds.length === 0) return '';
+            const children = mainRecord.childIds.map(cid => childLookup.get(cid)).filter(Boolean);
+            if (children.length === 0) return '';
+            const childrenHtml = children.map(c => createChildResultHTML(c)).join('');
+            return `<div class="tree-children" data-tree-root="${escapeAttr(mainRecord.id)}">
+                <div class="tree-children-header">
+                    <span>🔗 关联子流程（${children.length} 条）— 点击展开</span>
+                    <button class="tree-toggle" data-action="expand-all">全部展开</button>
+                </div>
+                <div class="tree-child-list">${childrenHtml}</div>
+            </div>`;
+        }
+        // 树状折叠列表交互：点击子卡片头部展开/收起；点击「全部展开」一键展开
+        function attachTreeListeners() {
+            document.querySelectorAll('.tree-child').forEach(card => {
+                card.querySelector('.tree-child-header').addEventListener('click', (e) => {
+                    if (e.target.closest('.copy-btn')) return;  // 复制按钮别触发折叠
+                    card.classList.toggle('expanded');
+                });
+            });
+            document.querySelectorAll('.tree-toggle[data-action="expand-all"]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const root = btn.closest('.tree-children');
+                    const allExpanded = root.querySelectorAll('.tree-child.expanded').length === root.querySelectorAll('.tree-child').length;
+                    root.querySelectorAll('.tree-child').forEach(c => {
+                        if (allExpanded) c.classList.remove('expanded');
+                        else c.classList.add('expanded');
+                    });
+                    btn.textContent = allExpanded ? '全部展开' : '全部收起';
+                });
+            });
         }
         // 最新动态分类：按 [来源] 分组渲染，公告（含 [链接] 字段）作 header，Q&A 嵌套展示
         async function displayLatestNews(records, query = '') {
@@ -790,7 +888,7 @@
             container.innerHTML = htmlParts.join('');
             attachResultListeners();
         }
-        function createResultHTML(record, query, index) {
+        function createResultHTML(record, query, index, childLookup = null) {
             let answerHtml = processAnswer(record.answer);
             if (query && query.trim() && !query.startsWith('#')) {
                 answerHtml = highlightInHtml(answerHtml, query);
@@ -800,7 +898,15 @@
             const isFav = favorites.has(record.id);
             const favIcon = isFav ? '★' : '☆';
             const imageHtml = record.image ? `<img class="result-image" src="${escapeHTML(record.image)}" loading="lazy" alt="${escapeHTML(record.keywords.slice(0, 3).join(' '))}" onerror="this.style.display='none'" />` : '';
-            return `<div class="result-item" style="animation-delay: ${Math.min(index, 12) * 0.05}s" data-id="${record.id}"><div class="result-header"><div class="result-meta">${record.tags.map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}</div><div class="result-header-right"><span class="source-file">📄 ${escapeHTML(record.sourceFile)}</span><button class="fav-btn ${isFav ? 'active' : ''}" data-id="${record.id}" title="${isFav ? '取消收藏' : '收藏'}">${favIcon}</button></div></div>${imageHtml}<div class="result-answer">${answerHtml}</div><div class="result-footer"><div class="keywords">${keywordsHTML}</div><div class="action-btns">${linkHTML}<button class="action-btn copy-btn" data-answer="${escapeAttr(record.answer)}">📋 复制答案</button></div></div></div>`;
+            // 主条目挂载子卡片
+            const treeHtml = (childLookup && record.childIds && record.childIds.length > 0)
+                ? createChildrenTreeHTML(record, childLookup)
+                : '';
+            // 主条目标签前多加一个 ⭐ 标识，方便一眼看出
+            const mainTag = (record.childIds && record.childIds.length > 0)
+                ? `<span class="tag" style="background:rgba(0,212,255,0.15);color:var(--accent);font-weight:600;">⭐ 主条目</span>`
+                : '';
+            return `<div class="result-item ${record.childIds && record.childIds.length > 0 ? 'result-item-main' : ''}" style="animation-delay: ${Math.min(index, 12) * 0.05}s" data-id="${record.id}"><div class="result-header"><div class="result-meta">${mainTag}${record.tags.map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}</div><div class="result-header-right"><span class="source-file">📄 ${escapeHTML(record.sourceFile)}</span><button class="fav-btn ${isFav ? 'active' : ''}" data-id="${record.id}" title="${isFav ? '取消收藏' : '收藏'}">${favIcon}</button></div></div>${imageHtml}<div class="result-answer">${answerHtml}</div><div class="result-footer"><div class="keywords">${keywordsHTML}</div><div class="action-btns">${linkHTML}<button class="action-btn copy-btn" data-answer="${escapeAttr(record.answer)}">📋 复制答案</button></div></div>${treeHtml}</div>`;
         }
         // 简单 MD5（用于记录 ID）
         function md5(str) {
