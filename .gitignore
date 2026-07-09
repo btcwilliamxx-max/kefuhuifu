@@ -50,3 +50,5 @@ push_*.py
 *_inspect.py
 check_*.py
 migrate_to_latest.py
+serve_kefu.py
+cloudflare-worker-chat.js

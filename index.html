@@ -94,83 +94,166 @@
         }
         .tag-loading { color: var(--text-muted); font-size: 0.875rem; padding: 10px 0; }
 
-        /* 智能搜索 (AI) */
-        .smart-search-container { position: relative; margin-bottom: 16px; }
-        .smart-search-container .search-box {
-            border-color: rgba(139, 92, 246, 0.25);
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(139, 92, 246, 0.06) 100%);
-            padding-left: 54px;
-            padding-right: 60px;
+        /* === Chat 区域（AI 客服助手） === */
+        .chat-section {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(0, 212, 255, 0.04) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 16px;
+            padding: 0;
+            margin-bottom: 24px;
+            overflow: hidden;
         }
-        .smart-search-container .search-box:focus {
-            border-color: #8b5cf6;
-            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18);
+        .chat-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 18px;
+            background: rgba(139, 92, 246, 0.06);
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
         }
-        .smart-search-icon {
-            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
-            font-size: 1.15rem; pointer-events: none;
+        .chat-header-left {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.95rem; font-weight: 600;
         }
-        .smart-mode-tag {
-            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+        .chat-header-left .icon { font-size: 1.2rem; }
+        .chat-header-right { display: flex; gap: 6px; align-items: center; }
+        .chat-header-btn {
+            font-size: 0.72rem; padding: 5px 10px; border-radius: 6px;
+            border: 1px solid var(--border); background: var(--bg-secondary);
+            color: var(--text-muted); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .chat-header-btn:hover { color: var(--text-primary); border-color: var(--accent); }
+        .chat-body {
+            padding: 16px 18px;
+            max-height: 500px;
+            overflow-y: auto;
+            display: flex; flex-direction: column; gap: 14px;
+        }
+        .chat-empty {
+            color: var(--text-muted); font-size: 0.85rem; text-align: center;
+            padding: 24px 0;
+        }
+        .chat-msg {
+            display: flex; flex-direction: column; gap: 4px;
+            animation: chat-fade-in 0.3s ease;
+        }
+        @keyframes chat-fade-in {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-msg-role {
+            font-size: 0.7rem; color: var(--text-muted);
+            font-weight: 600; letter-spacing: 0.3px;
+        }
+        .chat-msg.user .chat-msg-role { color: var(--accent); }
+        .chat-msg-bubble {
+            padding: 12px 14px; border-radius: 12px;
+            font-size: 0.92rem; line-height: 1.65;
+            white-space: pre-wrap; word-break: break-word;
+        }
+        .chat-msg.user .chat-msg-bubble {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+        .chat-msg.assistant .chat-msg-bubble {
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: var(--text-primary);
+        }
+        .chat-msg.error .chat-msg-bubble {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        .chat-msg-meta {
+            display: flex; align-items: center; gap: 10px;
+            margin-top: 6px; font-size: 0.7rem; color: var(--text-muted);
+        }
+        .chat-msg-warn {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+            padding: 8px 10px; border-radius: 8px;
+            font-size: 0.78rem; line-height: 1.5;
+            margin-top: 8px;
+        }
+        .chat-msg-actions { display: flex; gap: 6px; }
+        .chat-msg-action {
+            background: transparent; border: none;
+            color: var(--text-muted); cursor: pointer;
+            font-size: 0.75rem; padding: 2px 6px; border-radius: 4px;
+        }
+        .chat-msg-action:hover { color: var(--accent); background: rgba(139, 92, 246, 0.1); }
+        .chat-msg-refs {
+            margin-top: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+        .chat-msg-refs summary {
+            cursor: pointer; font-size: 0.78rem;
+            color: var(--text-secondary); font-weight: 500;
+            user-select: none;
+        }
+        .chat-msg-refs summary:hover { color: var(--accent); }
+        .chat-msg-ref-item {
+            margin-top: 8px; padding-top: 8px;
+            border-top: 1px dashed var(--border);
+            font-size: 0.82rem; line-height: 1.55;
+        }
+        .chat-msg-ref-item:first-of-type { border-top: none; padding-top: 4px; margin-top: 4px; }
+        .chat-msg-ref-title {
+            font-weight: 600; color: var(--accent); margin-bottom: 4px;
+            font-size: 0.78rem;
+        }
+        .chat-input-area {
+            display: flex; gap: 8px;
+            padding: 14px 18px;
+            border-top: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.04);
+        }
+        .chat-input {
+            flex: 1;
+            padding: 11px 14px;
+            font-size: 0.9rem; font-family: inherit;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            outline: none;
+            resize: none;
+            max-height: 100px;
+            line-height: 1.5;
+        }
+        .chat-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18); }
+        .chat-send-btn {
+            padding: 0 18px;
             background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-            color: #fff; font-size: 0.7rem; font-weight: 700;
-            padding: 4px 10px; border-radius: 6px; pointer-events: none;
-            letter-spacing: 0.5px;
+            border: none; border-radius: 10px;
+            color: #fff; font-weight: 600; font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .smart-search-hint {
-            font-size: 0.75rem; color: var(--text-muted); text-align: center; margin: -8px 0 20px;
+        .chat-send-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
+        .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .chat-status {
+            font-size: 0.75rem; color: var(--text-muted);
+            padding: 4px 18px 10px;
+            text-align: center;
         }
-        .smart-results { display: none; margin-bottom: 30px; }
-        .smart-results.show { display: block; }
-        .smart-section-title {
-            font-size: 0.85rem; color: var(--text-secondary); margin: 4px 0 10px;
-            font-weight: 600; display: flex; align-items: center; gap: 8px;
+        .chat-loading-dot {
+            display: inline-block;
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #8b5cf6;
+            animation: chat-pulse 1.4s infinite ease-in-out both;
         }
-        .smart-kb-hits {
-            background: var(--bg-secondary); border: 1px solid var(--border);
-            border-radius: 12px; padding: 16px; margin-bottom: 16px;
+        .chat-loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .chat-loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes chat-pulse {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
         }
-        .smart-kb-item {
-            padding: 12px 0; border-bottom: 1px solid var(--border);
-        }
-        .smart-kb-item:last-child { border-bottom: none; }
-        .smart-kb-title {
-            font-size: 0.85rem; color: var(--accent); margin-bottom: 6px; font-weight: 500;
-        }
-        .smart-kb-body {
-            font-size: 0.88rem; color: var(--text-primary); line-height: 1.6;
-            white-space: pre-wrap;
-        }
-        .smart-ai-box {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(0, 212, 255, 0.05) 100%);
-            border: 1px solid rgba(139, 92, 246, 0.35);
-            border-radius: 12px; padding: 18px;
-        }
-        .smart-ai-content {
-            font-size: 0.95rem; line-height: 1.7; color: var(--text-primary);
-            white-space: pre-wrap; margin-bottom: 12px;
-        }
-        .smart-ai-warn {
-            font-size: 0.75rem; color: #fbbf24; padding-top: 10px;
-            border-top: 1px solid rgba(251, 191, 36, 0.2);
-            display: flex; align-items: center; gap: 6px;
-        }
-        .smart-no-kb {
-            background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444; padding: 12px 16px; border-radius: 8px;
-            font-size: 0.85rem; margin-bottom: 16px;
-        }
-        .smart-loading {
-            padding: 30px 20px; text-align: center; color: var(--text-muted);
-            background: var(--bg-secondary); border: 1px solid var(--border);
-            border-radius: 12px; font-size: 0.9rem;
-        }
-        .smart-error {
-            background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444; padding: 12px 16px; border-radius: 8px;
-            font-size: 0.85rem; line-height: 1.6;
-        }
-        .smart-error-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
 
         .search-container { position: relative; margin-bottom: 24px; }
         .search-box { width: 100%; padding: 18px 24px; padding-left: 54px; font-size: 1rem; font-family: inherit; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; color: var(--text-primary); outline: none; transition: all 0.3s ease; }
@@ -463,13 +546,30 @@
             <input type="text" class="search-box" id="searchInput" placeholder="输入关键词搜索，或输入 #标签 筛选...">
             <div class="shortcuts"><span class="key-hint">Ctrl+K</span></div>
         </div>
-        <div class="smart-search-container">
-            <span class="smart-search-icon">🤖</span>
-            <input type="text" class="search-box smart-search-box" id="smartSearchInput" placeholder="智能搜索：粘贴客户原话，AI 找话术 + 解读公告">
-            <div class="smart-mode-tag">AI</div>
+
+        <!-- ============ AI 客服助手 (Chat) ============ -->
+        <div class="chat-section" id="chatSection">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <span class="icon">🤖</span>
+                    <span>AI 客服助手</span>
+                    <span style="font-size:0.7rem; color: var(--text-muted); font-weight: normal;">— 基于完整知识库</span>
+                </div>
+                <div class="chat-header-right">
+                    <span class="chat-header-btn" id="chatStats" title="会话信息">0 轮</span>
+                    <button class="chat-header-btn" id="chatClearBtn" title="清空对话历史">🗑 清空</button>
+                </div>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div class="chat-empty">还没有对话 · 输入问题试试，比如「015 号提案阶级奖池比例怎么算的？」</div>
+            </div>
+            <div class="chat-input-area">
+                <textarea class="chat-input" id="chatInput" placeholder="向 AI 提问...（Shift+Enter 换行，Enter 发送）" rows="1"></textarea>
+                <button class="chat-send-btn" id="chatSendBtn">发送</button>
+            </div>
+            <div class="chat-status" id="chatStatus"></div>
         </div>
-        <div class="smart-search-hint">智能搜索基于知识库内容生成回复，遇到无法回答会标注"KB 无相关"</div>
-        <div id="smartResults" class="smart-results"></div>
+
         <div class="tags-bar" id="tagsBar">
             <span class="tag-loading">加载中...</span>
         </div>
@@ -1130,29 +1230,18 @@
         }
         let debounceTimer;
         function debounceSearch() { clearTimeout(debounceTimer); debounceTimer = setTimeout(() => { performSearch(searchInput.value); }, 300); }
-        // ============ 智能搜索专用 Fuse（加权 keys） ============
-        // 关键词 0.7 + 答案 0.3，解决 Fuse.search 整句 0 命中 / 弱匹配问题
-        // 让"抖音"等在 answer 字段的关键词也能浮上来
-        let smartFuse = null;
-        function initSmartFuse() {
-            smartFuse = new Fuse(allRecords, {
-                keys: [
-                    { name: 'keywords', weight: 0.7 },
-                    { name: 'answer', weight: 0.3 }
-                ],
-                includeScore: true,
-                threshold: 0.6,
-                distance: 200,
-                minMatchCharLength: 2,
-                ignoreLocation: true
-            });
-        }
+        // ============ AI 客服助手 (Chat) ============
+        // Cloudflare Worker → 智谱 GLM-4.7-Flash（全量 KB 灌入 system prompt）
+        // 客服在 chat 中提问 → 带历史对话发 Worker → LLM 基于 KB 全文回答
+        const CHAT_WORKER_URL = 'https://white-recipe-de08ark-kb-search.btcwilliamxx.workers.dev';
+        const CHAT_HISTORY_KEY = 'ark_chat_history_v1';
+        const CHAT_MAX_HISTORY = 6;   // 保留最近 6 轮（user + assistant 各 1 算 1 轮）
+
         async function startApp() {
             searchInput = document.getElementById('searchInput');
             await initOpenCC();
             await initSegmenter();
             await loadData();
-            initSmartFuse();
             loadFavorites();
             renderSidebar();
             generateHotKeywords();
@@ -1161,7 +1250,7 @@
                 if (e.key === 'Escape') { searchInput.value = ''; currentTag = null; setCategory('all'); }
                 if (e.key === 'Enter') { clearTimeout(debounceTimer); performSearch(searchInput.value); }
             });
-            bindSmartSearch();
+            initChat();
             document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); searchInput.focus(); } });
             // 侧边栏：移动端汉堡菜单
             document.getElementById('sidebarHandle').addEventListener('click', openSidebar);
@@ -1173,40 +1262,127 @@
         }
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
 
-        // ============ 智能搜索 (AI) ============
-        // Cloudflare Worker → 智谱 GLM-4.7-Flash (RAG)
-        const SMART_WORKER_URL = 'https://white-recipe-de08ark-kb-search.btcwilliamxx.workers.dev';
-        let smartInput, smartResultsEl, smartDebounceTimer;
+        // ============ AI 客服助手 (Chat) ============
+        // Cloudflare Worker → 智谱 GLM-4.7-Flash
+        // 思路：Worker 一次性 fetch 完整 KB（8 个 txt）放进 system prompt，
+        //       前端带历史对话（最多 6 轮）发请求，LLM 基于 KB 全文回答。
+        //       前端自己用 allRecords 做 substring 命中，给每条 AI 答案挂"📚 相关话术"折叠面板。
+        let chatBody, chatInput, chatSendBtn, chatClearBtn, chatStatsEl;
+        let chatHistory = [];          // [{role: 'user'|'assistant', content, refs?, ts}]
+        let chatSending = false;
 
-        function bindSmartSearch() {
-            smartInput = document.getElementById('smartSearchInput');
-            smartResultsEl = document.getElementById('smartResults');
-            smartInput.addEventListener('input', debounceSmartSearch);
-            smartInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') { clearSmartSearch(); }
-                if (e.key === 'Enter') { clearTimeout(smartDebounceTimer); performSmartSearch(smartInput.value); }
+        function initChat() {
+            chatBody = document.getElementById('chatBody');
+            chatInput = document.getElementById('chatInput');
+            chatSendBtn = document.getElementById('chatSendBtn');
+            chatClearBtn = document.getElementById('chatClearBtn');
+            chatStatsEl = document.getElementById('chatStats');
+
+            loadChatHistory();
+            renderChat();
+
+            // 自动撑高 textarea
+            chatInput.addEventListener('input', autoGrowChatInput);
+            // Enter 发送 / Shift+Enter 换行
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    doSendChat();
+                }
             });
+            chatSendBtn.addEventListener('click', doSendChat);
+            chatClearBtn.addEventListener('click', clearChat);
+            // 事件代理：复制按钮
+            chatBody.addEventListener('click', onChatBodyClick);
+
+            // 历史恢复时为旧 assistant 消息重算 refs（localStorage 只存 role/content/ts）
+            chatHistory.forEach(m => {
+                if (m.role === 'assistant' && !m.refs && m.content) {
+                    // 找到它前面最近一条 user 消息作为命中 query
+                    const idx = chatHistory.indexOf(m);
+                    let q = '';
+                    for (let i = idx - 1; i >= 0; i--) {
+                        if (chatHistory[i].role === 'user') { q = chatHistory[i].content; break; }
+                    }
+                    m.refs = q ? findRelatedKB(q, 4) : [];
+                }
+            });
+            if (chatHistory.some(m => m.role === 'assistant' && !m.refs && m.content)) {
+                saveChatHistory();   // 存一份带 refs 的，下次启动不用再算
+            }
+
+            updateChatStats();
         }
 
-        function debounceSmartSearch() {
-            clearTimeout(smartDebounceTimer);
-            smartDebounceTimer = setTimeout(() => performSmartSearch(smartInput.value), 500);
+        function onChatBodyClick(e) {
+            const btn = e.target.closest('.chat-msg-action');
+            if (!btn) return;
+            const idx = parseInt(btn.dataset.idx, 10);
+            const msg = chatHistory[idx];
+            if (!msg) return;
+            const text = msg.content || '';
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); showToast('已复制到剪贴板'); } catch (_) {}
+            document.body.removeChild(ta);
         }
 
-        function clearSmartSearch() {
-            smartInput.value = '';
-            smartResultsEl.classList.remove('show');
-            smartResultsEl.innerHTML = '';
+        function autoGrowChatInput() {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + 'px';
         }
 
-        // 复用现有 Fuse + substring 逻辑，取 top-N 命中
-        function getTopKBHits(query, n) {
+        function loadChatHistory() {
+            try {
+                const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+                chatHistory = raw ? JSON.parse(raw) : [];
+                // 数据迁移：旧版可能是 [{q, a}] 形，这里只接受带 role 字段的
+                if (!Array.isArray(chatHistory)) chatHistory = [];
+                chatHistory = chatHistory.filter(m => m && (m.role === 'user' || m.role === 'assistant'));
+            } catch (e) { chatHistory = []; }
+        }
+
+        function saveChatHistory() {
+            try {
+                // 只持久化 role + content，refs 每次重新算
+                const slim = chatHistory.map(m => ({ role: m.role, content: m.content, ts: m.ts }));
+                localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(slim));
+            } catch (e) { /* quota exceeded 等 */ }
+        }
+
+        function clearChat() {
+            if (chatHistory.length === 0) return;
+            if (!confirm('确定要清空所有对话历史吗？此操作不可撤销。')) return;
+            chatHistory = [];
+            saveChatHistory();
+            renderChat();
+            updateChatStats();
+        }
+
+        function updateChatStats() {
+            const turns = chatHistory.filter(m => m.role === 'user').length;
+            chatStatsEl.textContent = `${turns} 轮`;
+            chatStatsEl.title = `对话历史：${turns} 轮 / 限 ${CHAT_MAX_HISTORY} 轮`;
+        }
+
+        function truncateHistory() {
+            // CHAT_MAX_HISTORY 是按 user 轮算；保留最近 N * 2 条消息
+            const maxMsgs = CHAT_MAX_HISTORY * 2;
+            if (chatHistory.length > maxMsgs) {
+                chatHistory = chatHistory.slice(chatHistory.length - maxMsgs);
+            }
+        }
+
+        // 用本地 KB 找前 N 条最相关的（substring 优先 + Fuse 兜底）→ 给 AI 答案挂"📚 相关话术"
+        function findRelatedKB(query, n) {
+            n = n || 4;
             const simplifiedQuery = window.convertToSimplified ? window.convertToSimplified(query) : query;
-            const queryVariants = [...new Set([query, simplifiedQuery])];
+            const variants = [...new Set([query, simplifiedQuery])];
             const foundIds = new Set();
             const hits = [];
-            // Pass 1: substring 精确匹配（score 强制为 0，最高优先级）
-            for (const v of queryVariants) {
+            // Pass 1: substring 精确
+            for (const v of variants) {
                 const needle = v.toLowerCase();
                 for (const rec of allRecords) {
                     if (foundIds.has(rec.id)) continue;
@@ -1217,61 +1393,114 @@
                     }
                 }
             }
-            // Pass 2: 多策略切词 + Fuse 模糊
-            // 用 Map 收集每条记录的 best score，最后按 score 排序取 top-N
-            // 避免 n-gram 太激进撞到一堆不相关条目都被收进来
-            const bestScore = new Map(); // id → {record, score}
-            const subQueries = new Set();
-            for (const v of queryVariants) {
-                v.split(/[\s,，。？！、；:：]+/).forEach(p => { if (p.length >= 2) subQueries.add(p); });
-                tokenize(v).filter(t => t.length >= 2).forEach(t => subQueries.add(t));
-                for (let i = 0; i <= v.length - 2; i++) {
-                    subQueries.add(v.substr(i, 2));
-                }
-            }
-            for (const q of subQueries) {
-                const results = smartFuse.search(q);
-                for (const r of results) {
-                    if (foundIds.has(r.item.id)) continue;
-                    const existing = bestScore.get(r.item.id);
-                    if (!existing || r.score < existing.score) {
-                        bestScore.set(r.item.id, { record: r.item, score: r.score });
+            // Pass 2: Fuse 模糊（用主 fuse，不新建）
+            if (fuse && hits.length < n) {
+                for (const v of variants) {
+                    const tokens = tokenize(v).filter(t => t.length >= 2);
+                    const queries = tokens.length > 1 ? tokens : [v];
+                    for (const q of queries) {
+                        fuse.search(q).forEach(r => {
+                            if (foundIds.has(r.item.id)) return;
+                            hits.push(r.item);
+                            foundIds.add(r.item.id);
+                        });
+                        if (hits.length >= n) break;
                     }
+                    if (hits.length >= n) break;
                 }
             }
-            // 按 best score 排序，取 top-N
-            const sorted = [...bestScore.values()].sort((a, b) => a.score - b.score);
-            for (const entry of sorted) {
-                if (foundIds.has(entry.record.id)) continue;
-                hits.push(entry.record);
-                foundIds.add(entry.record.id);
-                if (hits.length >= n) break;
-            }
-            return hits;
+            return hits.slice(0, n);
         }
 
-        async function performSmartSearch(query) {
-            if (!query.trim()) {
-                smartResultsEl.classList.remove('show');
-                smartResultsEl.innerHTML = '';
+        function renderChat() {
+            if (chatHistory.length === 0) {
+                chatBody.innerHTML = '<div class="chat-empty">还没有对话 · 输入问题试试，比如「015 号提案阶级奖池比例怎么算的？」</div>';
                 return;
             }
+            const html = chatHistory.map((m, idx) => renderChatMessage(m, idx)).join('');
+            chatBody.innerHTML = html;
+            // 滚动到底部
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
 
-            smartResultsEl.classList.add('show');
-            smartResultsEl.innerHTML = '<div class="smart-loading">🤖 AI 思考中...（首次冷启动约 2-3 秒）</div>';
+        function renderChatMessage(m, idx) {
+            const ts = m.ts ? new Date(m.ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '';
+            const role = m.role;
+            const label = role === 'user' ? '你' : 'AI 助手';
+            let refsHtml = '';
+            if (role === 'assistant' && m.refs && m.refs.length > 0) {
+                refsHtml = `<details class="chat-msg-refs">
+                    <summary>📚 相关话术（${m.refs.length} 条）</summary>
+                    ${m.refs.map(r => `<div class="chat-msg-ref-item">
+                        <div class="chat-msg-ref-title">${escapeHTML((r.keywords || []).slice(0, 6).join(' '))}</div>
+                        <div>${escapeHTML(r.answer.length > 280 ? r.answer.slice(0, 280) + '...' : r.answer)}</div>
+                    </div>`).join('')}
+                </details>`;
+            }
+            const warn = role === 'assistant'
+                ? `<div class="chat-msg-warn">⚠️ 内容由 AI 生成，仅供参考。客服使用前请人工核对关键数字 / 地址。</div>`
+                : '';
+            const copyBtn = role === 'assistant'
+                ? `<button class="chat-msg-action" data-idx="${idx}" data-action="copy">📋 复制</button>`
+                : '';
+            return `<div class="chat-msg ${role}">
+                <div class="chat-msg-role">${label} · ${escapeHTML(ts)}</div>
+                <div class="chat-msg-bubble">${escapeHTML(m.content).replace(/\n/g, '<br>')}</div>
+                ${warn}
+                ${refsHtml}
+                <div class="chat-msg-meta">
+                    <div class="chat-msg-actions">${copyBtn}</div>
+                </div>
+            </div>`;
+        }
 
-            const kbHits = getTopKBHits(query, 8);
+        function showToast(text) {
+            const t = document.getElementById('toast');
+            t.textContent = text;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), 1500);
+        }
+
+        function setChatStatus(html) {
+            document.getElementById('chatStatus').innerHTML = html;
+        }
+
+        async function doSendChat() {
+            const text = chatInput.value.trim();
+            if (!text || chatSending) return;
+
+            chatSending = true;
+            chatSendBtn.disabled = true;
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            // 1) 先把 user 消息落进历史 + 渲染
+            const userMsg = { role: 'user', content: text, ts: Date.now() };
+            chatHistory.push(userMsg);
+            truncateHistory();
+            renderChat();
+            updateChatStats();
+
+            // 2) 准备发给 Worker 的 messages（不存 refs）
+            const apiMessages = chatHistory.map(m => ({ role: m.role, content: m.content }));
+
+            // 3) 临时占位 + loading dots
+            const loadingIdx = chatHistory.length;
+            chatHistory.push({ role: 'assistant', content: '', ts: Date.now(), refs: [], loading: true });
+            renderChat();
+
+            setChatStatus('<span class="chat-loading-dot"></span><span class="chat-loading-dot"></span><span class="chat-loading-dot"></span> AI 思考中...（首次冷启动约 2-3 秒）');
 
             try {
-                const resp = await fetch(SMART_WORKER_URL, {
+                const resp = await fetch(CHAT_WORKER_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        question: query,
-                        contexts: kbHits.map(r => ({
-                            title: r.keywords.slice(0, 5).join(' '),
-                            body: r.answer
-                        }))
+                        messages: apiMessages,
+                        // 旧字段兼容（保留），新 Worker 会忽略
+                        question: text,
+                        contexts: []
                     })
                 });
 
@@ -1280,44 +1509,30 @@
                     throw new Error(`Worker ${resp.status}: ${errText.slice(0, 200)}`);
                 }
                 const data = await resp.json();
-                const answer = data.answer || '（模型无回复）';
-                renderSmartResult(query, kbHits, answer);
+                const answer = (data.answer || '（模型无回复）').trim();
+
+                // 4) 用最后一条 user 消息找相关 KB，挂 refs
+                const refs = findRelatedKB(text, 4);
+                chatHistory[loadingIdx] = { role: 'assistant', content: answer, ts: Date.now(), refs };
+                renderChat();
+                saveChatHistory();
+                updateChatStats();
+                setChatStatus('');
             } catch (e) {
-                smartResultsEl.innerHTML = `<div class="smart-error">⚠️ AI 调用失败<div class="smart-error-hint">${escapeHTML(e.message)}<br>检查 Worker URL 是否可达，或网络是否通畅</div></div>`;
+                chatHistory[loadingIdx] = {
+                    role: 'assistant',
+                    content: `⚠️ AI 调用失败：${e.message}\n\n检查：\n1. Worker URL 是否可达\n2. 网络是否通畅\n3. KB 是否已部署到 GitHub Pages`,
+                    ts: Date.now(),
+                    refs: []
+                };
+                renderChat();
+                saveChatHistory();   // 即使失败也要存历史，不然后面刷新看不到失败原因
+                setChatStatus('');
+            } finally {
+                chatSending = false;
+                chatSendBtn.disabled = false;
+                chatInput.focus();
             }
-        }
-
-        function renderSmartResult(query, kbHits, answer) {
-            const noKb = kbHits.length === 0;
-
-            // KB 原文 section
-            let kbSection;
-            if (noKb) {
-                kbSection = `<div class="smart-no-kb">📭 知识库无相关条目，AI 将基于通用理解回复（仅供参考，不保证准确）</div>`;
-            } else {
-                kbSection = `<div class="smart-kb-hits">
-                    <div class="smart-section-title">📚 KB 话术原文（${kbHits.length} 条命中）</div>
-                    ${kbHits.map((r, i) => {
-                        const titleTags = r.tags.length > 0
-                            ? ' ' + r.tags.slice(0, 3).map(t => `<span style="color:var(--text-muted);font-size:0.75rem;font-weight:normal;">${escapeHTML(t)}</span>`).join(' ')
-                            : '';
-                        const body = r.answer.length > 280 ? r.answer.slice(0, 280) + '...' : r.answer;
-                        return `<div class="smart-kb-item">
-                            <div class="smart-kb-title">${i + 1}. ${escapeHTML(r.keywords.slice(0, 5).join(' '))}${titleTags}</div>
-                            <div class="smart-kb-body">${escapeHTML(body)}</div>
-                        </div>`;
-                    }).join('')}
-                </div>`;
-            }
-
-            // AI 解读 section
-            const aiSection = `<div class="smart-ai-box">
-                <div class="smart-section-title">🤖 AI 解读</div>
-                <div class="smart-ai-content">${escapeHTML(answer).replace(/\n/g, '<br>')}</div>
-                <div class="smart-ai-warn">⚠️ 内容由 AI 生成，仅供参考。客服使用前请人工核对</div>
-            </div>`;
-
-            smartResultsEl.innerHTML = kbSection + aiSection;
         }
 
         // ============ 入口：根据密码决定是否启动主程序 ============
