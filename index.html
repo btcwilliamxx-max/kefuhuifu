@@ -1319,11 +1319,22 @@
 
             smartResultsEl.innerHTML = kbSection + aiSection;
         }
-        // ============ 回到顶部按钮 ============
+
+        // ============ 入口：根据密码决定是否启动主程序 ============
+        if (isAuthed()) {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            startApp();
+        } else {
+            bindLogin();
+        }
+    </script>
+    <button class="back-to-top" id="backToTop" title="回到顶部" aria-label="回到顶部">↑</button>
+    <script>
+        // IIFE 必须等 DOM 解析完才跑 → 单独 script 块, 浏览器自动延迟到 </body> 前执行
         (function() {
             const btn = document.getElementById('backToTop');
-            if (!btn) return;
-            const SHOW_AT = 400;  // 滚动超过 400px 才显示
+            if (!btn) { console.warn('[back-to-top] button not found'); return; }
+            const SHOW_AT = 400;
             let ticking = false;
             const onScroll = () => {
                 if (!ticking) {
@@ -1339,16 +1350,8 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
             onScroll();
+            console.log('[back-to-top] initialized, scrollY=' + window.scrollY);
         })();
-
-        // ============ 入口：根据密码决定是否启动主程序 ============
-        if (isAuthed()) {
-            document.getElementById('loginOverlay').classList.add('hidden');
-            startApp();
-        } else {
-            bindLogin();
-        }
     </script>
-    <button class="back-to-top" id="backToTop" title="回到顶部" aria-label="回到顶部">↑</button>
 </body>
 </html>
