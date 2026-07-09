@@ -89,6 +89,22 @@ export default {
       return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
     }
 
+    // 特殊路由：POST /refresh — 验证密码后清空 KB 缓存
+    const url = new URL(request.url);
+    if (url.pathname === '/refresh') {
+      let body;
+      try { body = await request.json(); } catch { return jsonResponse({ error: 'Invalid JSON' }, 400); }
+      const pw = body && body.password;
+      // 优先用 env.REFRESH_PASSWORD；fallback 到内置硬编码（不推荐生产用）
+      const expected = env.REFRESH_PASSWORD || 'arkie2026';
+      if (!pw || pw !== expected) {
+        return jsonResponse({ ok: false, error: '密码错误' }, 403);
+      }
+      KB_CACHE = null;
+      console.log('[KB] 缓存已清空（手动刷新）');
+      return jsonResponse({ ok: true, kb_cache_cleared: true });
+    }
+
     // 解析 body
     let body;
     try { body = await request.json(); }
