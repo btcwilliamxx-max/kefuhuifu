@@ -114,6 +114,9 @@
             transition: transform 0.18s ease, box-shadow 0.2s ease;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-user-drag: none;
+            touch-action: none;   /* iOS Safari 不要把 touch 当 scroll */
+            -webkit-tap-highlight-color: transparent;
         }
         .chat-launcher:hover {
             transform: translateY(-2px) scale(1.04);
@@ -362,11 +365,19 @@
             40% { transform: scale(1); opacity: 1; }
         }
 
-        /* 抽屉在手机上改为全屏式 */
+        /* 抽屉在手机上改成 bottom-sheet 风格（占 70vh, 上面留 30vh 给 backdrop 可见可点） */
         @media (max-width: 540px) {
             .chat-drawer {
-                right: 12px; left: 12px; bottom: 80px;
-                width: auto; height: calc(100vh - 110px);
+                right: 0; left: 0; bottom: 0;
+                width: auto;
+                height: 70vh;
+                height: 70dvh;
+                border-radius: 16px 16px 0 0;
+                border-bottom: none;
+            }
+            .chat-launcher {
+                right: 16px; bottom: 16px;
+                width: 52px; height: 52px;
             }
         }
 
@@ -1518,14 +1529,8 @@
             chatCloseBtn.addEventListener('click', closeDrawer);
             chatBody.addEventListener('click', onChatBodyClick);
 
-            // Launcher: 拖动 + 点击展开
+            // Launcher 拖动逻辑（已经包了 pointer events + click 兜底）
             initLauncherDrag();
-            chatLauncher.addEventListener('click', () => {
-                // 拖动后 350ms 内不算 click
-                if (chatLauncher.dataset.justDragged) return;
-                if (chatLauncher.classList.contains('dragging')) return;
-                toggleDrawer();
-            });
 
             // Backdrop 点击收起
             chatBackdrop.addEventListener('click', closeDrawer);
@@ -1552,41 +1557,67 @@
             window.__chatReady = true;   // 测试可等
         }
 
-        // ---------- Launcher 拖动 ----------
+        // ---------- Launcher 拖动（用 Pointer Events 统一 mouse + touch，跨 iOS / Android / Desktop） ----------
         function initLauncherDrag() {
-            // 恢复位置
+            // 恢复位置（但要验证还在当前 viewport 内 — 否则 reset 到默认右下角）
             try {
                 const pos = JSON.parse(localStorage.getItem(LAUNCHER_POS_KEY) || 'null');
-                if (pos && Number.isFinite(pos.x) && Number.isFinite(pos.y)) {
+                const w = chatLauncher.offsetWidth || 56;
+                const h = chatLauncher.offsetHeight || 56;
+                const inViewport = pos &&
+                    Number.isFinite(pos.x) && Number.isFinite(pos.y) &&
+                    pos.x >= -10 && pos.x + w <= window.innerWidth + 10 &&
+                    pos.y >= -10 && pos.y + h <= window.innerHeight + 10;
+                if (inViewport) {
                     chatLauncher.style.left = pos.x + 'px';
                     chatLauncher.style.top = pos.y + 'px';
                     chatLauncher.style.right = 'auto';
                     chatLauncher.style.bottom = 'auto';
+                } else {
+                    chatLauncher.style.left = 'auto';
+                    chatLauncher.style.top = 'auto';
+                    chatLauncher.style.right = '24px';
+                    chatLauncher.style.bottom = '24px';
+                    try { localStorage.removeItem(LAUNCHER_POS_KEY); } catch (e) {}
                 }
-            } catch (e) {}
+            } catch (e) {
+                chatLauncher.style.left = 'auto';
+                chatLauncher.style.top = 'auto';
+                chatLauncher.style.right = '24px';
+                chatLauncher.style.bottom = '24px';
+            }
 
             let dragStartX = 0, dragStartY = 0;
             let launcherStartX = 0, launcherStartY = 0;
             let dragging = false;
             let moved = false;
-            const DRAG_THRESHOLD = 5;  // 超过这个像素才算拖动而不是点击
+            let activePointerId = null;
+            let lastToggleTs = 0;
+            let lastDragEndTs = 0;          // 上次 drag 结束时间戳
+            const DRAG_THRESHOLD = 5;
+            const TOGGLE_DEBOUNCE = 600;
+            const DRAG_LOCK_MS = 400;        // drag 结束后这段时间内 toggle 被屏蔽
 
-            const onDown = (e) => {
+            const onPointerDown = (e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
                 dragging = true; moved = false;
+                activePointerId = e.pointerId;
                 dragStartX = e.clientX; dragStartY = e.clientY;
                 const rect = chatLauncher.getBoundingClientRect();
                 launcherStartX = rect.left; launcherStartY = rect.top;
                 chatLauncher.classList.add('dragging');
-                e.preventDefault();
+                try { chatLauncher.setPointerCapture(e.pointerId); } catch (_) {}
+                // 不 preventDefault — iOS Safari 上 preventDefault 会阻止 click 合成
+                // 改用 CSS touch-action: none 已阻止页面滚动
             };
-            const onMove = (e) => {
-                if (!dragging) return;
+
+            const onPointerMove = (e) => {
+                if (!dragging || e.pointerId !== activePointerId) return;
                 const dx = e.clientX - dragStartX;
                 const dy = e.clientY - dragStartY;
                 if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) moved = true;
                 let nx = launcherStartX + dx;
                 let ny = launcherStartY + dy;
-                // 限制在视口内
                 const w = chatLauncher.offsetWidth, h = chatLauncher.offsetHeight;
                 const maxX = window.innerWidth - w - 4;
                 const maxY = window.innerHeight - h - 4;
@@ -1595,30 +1626,38 @@
                 chatLauncher.style.left = nx + 'px';
                 chatLauncher.style.top = ny + 'px';
             };
-            const onUp = () => {
-                if (!dragging) return;
+
+            const onPointerUp = (e) => {
+                if (e.pointerId !== activePointerId) return;
+                const wasDragging = dragging;
                 dragging = false;
                 chatLauncher.classList.remove('dragging');
+                try { chatLauncher.releasePointerCapture(e.pointerId); } catch (_) {}
+                activePointerId = null;
                 if (moved) {
-                    // 保存位置，并标记"刚拖动过"，300ms 内屏蔽 click 触发的 toggle
-                    chatLauncher.dataset.justDragged = '1';
                     const rect = chatLauncher.getBoundingClientRect();
                     try { localStorage.setItem(LAUNCHER_POS_KEY, JSON.stringify({ x: rect.left, y: rect.top })); } catch (e) {}
-                    setTimeout(() => { delete chatLauncher.dataset.justDragged; }, 350);
+                    lastDragEndTs = Date.now();
+                } else if (wasDragging) {
+                    lastToggleTs = Date.now();
+                    toggleDrawer();
                 }
             };
 
-            chatLauncher.addEventListener('mousedown', onDown);
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', onUp);
-            // 触屏支持
-            chatLauncher.addEventListener('touchstart', (e) => {
-                if (e.touches[0]) onDown({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY, preventDefault: () => e.preventDefault() });
-            }, { passive: false });
-            window.addEventListener('touchmove', (e) => {
-                if (e.touches[0]) onMove({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
-            }, { passive: true });
-            window.addEventListener('touchend', onUp);
+            chatLauncher.addEventListener('pointerdown', onPointerDown);
+            chatLauncher.addEventListener('pointermove', onPointerMove);
+            chatLauncher.addEventListener('pointerup', onPointerUp);
+            chatLauncher.addEventListener('pointercancel', onPointerUp);
+
+            // click 主路径（Pointer events 兼容性差）
+            chatLauncher.addEventListener('click', (e) => {
+                // drag 刚结束 → 屏蔽 click 400ms
+                if (Date.now() - lastDragEndTs < DRAG_LOCK_MS) return;
+                // pointerup 已经 toggle 过，防止 click 重复触发
+                if (Date.now() - lastToggleTs < TOGGLE_DEBOUNCE) return;
+                lastToggleTs = Date.now();
+                toggleDrawer();
+            });
         }
 
         // ---------- Drawer 切换 ----------
