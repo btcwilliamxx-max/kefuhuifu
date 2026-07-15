@@ -22,10 +22,19 @@
             --accent-hover: #ffd35c;                                 /* 金色 hover */
             --accent-glow: rgba(238, 183, 38, 0.18);                 /* 金色微光 */
             --accent-soft: rgba(238, 183, 38, 0.08);                 /* 金色淡底 */
+            --accent-soft-2: rgba(238, 183, 38, 0.12);
             --border: #2a2a32;                                       /* ARK line 边框 */
+            --border-soft: #232429;                                  /* 更淡的分割线 */
             --line: #2a2a32;
+            --bg-hover: rgba(238, 183, 38, 0.04);                    /* 行 hover */
+            --bg-active: rgba(238, 183, 38, 0.08);                   /* 选中态底 */
+            --text-muted: #8f9099;
             --success: #10b981;
             --danger: #f36161;
+            --warning: #fbbf24;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -62,52 +71,16 @@
         }
         h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #fff 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .subtitle { color: var(--text-secondary); font-size: 0.95rem; margin-top: 8px; }
-        .quicklinks {
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
-            margin: 0 0 30px;
-        }
-        .quicklink-card {
-            display: flex; align-items: center; gap: 14px;
-            padding: 16px 18px;
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-            border: 1px solid var(--border); border-radius: 14px;
-            color: var(--text-primary); text-decoration: none;
-            transition: all 0.25s ease; position: relative; overflow: hidden;
-            flex: 1 1 320px; max-width: 420px;
-        }
-        .quicklink-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
-            background: var(--accent); transform: scaleY(0); transform-origin: top;
-            transition: transform 0.25s ease;
-        }
-        .quicklink-card:hover {
-            border-color: var(--accent); transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(238, 183, 38, 0.15);
-        }
-        .quicklink-card:hover::before { transform: scaleY(1); }
-        .quicklink-card:hover .quicklink-arrow { transform: translateX(4px); color: var(--accent); }
-        .quicklink-icon {
-            width: 44px; height: 44px; border-radius: 12px;
-            background: rgba(238, 183, 38, 0.12); display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; flex-shrink: 0;
-        }
-        .quicklink-text { flex: 1; min-width: 0; }
-        .quicklink-title { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
-        .quicklink-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
-        .quicklink-arrow { color: var(--text-muted); font-size: 1.1rem; transition: all 0.25s ease; flex-shrink: 0; }
-        @media (max-width: 480px) {
-            .quicklink-card { flex: 1 1 100%; max-width: none; }
-        }
-        .tag-loading { color: var(--text-muted); font-size: 0.875rem; padding: 10px 0; }
 
         /* === Chat（浮动小按钮 + 抽屉，与 ARK 官方风格一致） === */
+        /* 方案 B：金色背景 + 圆形裁切 */
         .chat-launcher {
             position: fixed;
             right: 24px; bottom: 24px;   /* 默认右下角，拖动后会被 JS 改写为 left/top */
             width: 56px; height: 56px;
             border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent) 0%, #c79a1a 100%);
-            box-shadow: 0 8px 28px rgba(238, 183, 38, 0.32), 0 2px 4px rgba(0,0,0,0.4);
+            background: var(--accent);
+            box-shadow: 0 8px 28px rgba(238, 183, 38, 0.45), 0 2px 4px rgba(0,0,0,0.4);
             cursor: grab;
             z-index: 9000;
             display: flex; align-items: center; justify-content: center;
@@ -115,8 +88,9 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-user-drag: none;
-            touch-action: none;   /* iOS Safari 不要把 touch 当 scroll */
+            touch-action: none;
             -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
         }
         .chat-launcher:hover {
             transform: translateY(-2px) scale(1.04);
@@ -125,12 +99,14 @@
         .chat-launcher:active { cursor: grabbing; transform: scale(0.96); }
         .chat-launcher.dragging { cursor: grabbing; transition: none; }
         .chat-launcher svg { width: 26px; height: 26px; pointer-events: none; }
+        .chat-launcher-img { width: 100%; height: 100%; object-fit: cover; object-position: center top; pointer-events: none; user-select: none; -webkit-user-drag: none; }
         .chat-launcher-glow {
             position: absolute; inset: -3px;
             border-radius: 16px;
             background: linear-gradient(135deg, var(--accent) 0%, transparent 50%);
             opacity: 0; z-index: -1; filter: blur(8px);
             transition: opacity 0.25s ease;
+            pointer-events: none;
         }
         .chat-launcher:hover .chat-launcher-glow { opacity: 0.5; }
 
@@ -370,8 +346,8 @@
             .chat-drawer {
                 right: 0; left: 0; bottom: 0;
                 width: auto;
-                height: 70vh;
-                height: 70dvh;
+                height: 80vh;
+                height: 80dvh;
                 border-radius: 16px 16px 0 0;
                 border-bottom: none;
             }
@@ -395,9 +371,17 @@
         .stats-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); font-size: 0.85rem; color: var(--text-secondary); }
         .stats-bar .load-time { color: var(--accent); font-family: 'JetBrains Mono', monospace; }
         .results-count { color: var(--text-muted); }
-        .result-item { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: all 0.3s ease; animation: fadeInUp 0.4s ease; }
+        .result-item { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: all 0.25s ease; animation: fadeInUp 0.4s ease; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .result-item:hover { border-color: rgba(238, 183, 38, 0.3); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+        .result-item:hover { border-color: var(--accent-soft-2); box-shadow: var(--shadow-md); }
+        /* 渐进式披露：长答案默认折叠前 6 行 + 渐隐遮罩 */
+        .result-answer { font-size: 0.92rem; line-height: 1.7; color: var(--text-primary); margin-bottom: 10px; white-space: pre-wrap; position: relative; }
+        .result-answer.collapsed { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; max-height: 10.2em; }
+        .result-answer.collapsed::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 28px; background: linear-gradient(to bottom, transparent, var(--bg-secondary)); pointer-events: none; }
+        .result-expand-btn { display: inline-flex; align-items: center; gap: 4px; margin: 4px 0 8px; padding: 4px 10px; background: transparent; border: 1px solid var(--border); border-radius: 5px; color: var(--accent); font-size: 0.74rem; cursor: pointer; font-family: inherit; transition: all 0.15s; user-select: none; }
+        .result-expand-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+        .result-expand-btn .arrow { transition: transform 0.2s; display: inline-block; }
+        .result-answer.expanded + .result-expand-btn .arrow { transform: rotate(180deg); }
         /* 最新动态分类：公告 + 嵌套 Q&A */
         .latest-announcement-wrapper { margin-bottom: 16px; }
         .latest-announcement-wrapper .result-item { border-left: 3px solid var(--accent); }
@@ -427,14 +411,14 @@
         .result-meta { display: flex; gap: 8px; flex-wrap: wrap; }
         .tag { padding: 4px 10px; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.75rem; color: var(--accent); border: 1px solid rgba(238, 183, 38, 0.2); }
         .source-file { font-size: 0.75rem; color: var(--text-muted); padding: 4px 10px; background: var(--bg-tertiary); border-radius: 6px; }
-        .result-answer { font-size: 0.95rem; line-height: 1.7; color: var(--text-primary); margin-bottom: 12px; white-space: pre-wrap; }
         .result-answer a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
         .result-answer a:hover { color: var(--accent-hover); text-decoration: underline; }
         .result-answer .contract-address { display: inline-flex; align-items: center; gap: 6px; background: rgba(238, 183, 38, 0.1); padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent); word-break: break-all; }
         .result-answer .contract-address a { color: var(--accent); font-size: 0.8rem; }
         .result-answer .contract-address .copy-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; font-size: 0.8rem; transition: color 0.2s; }
         .result-answer .contract-address .copy-btn:hover { color: var(--accent); }
-        .result-answer mark { background: #fde047; color: #1e293b; font-weight: 700; border-radius: 2px; padding: 0 2px; }
+        .result-answer mark { background: var(--accent); color: var(--bg-primary); font-weight: 700; border-radius: 2px; padding: 0 2px; }
+        .result-answer code { background: var(--bg-tertiary); padding: 1px 5px; border-radius: 3px; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
         .result-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .keywords { display: flex; flex-wrap: wrap; gap: 6px; }
         .keyword-tag { padding: 4px 10px; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.75rem; color: var(--text-secondary); }
@@ -442,6 +426,29 @@
         .action-btn { padding: 8px 14px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px; }
         .action-btn:hover { background: var(--accent); color: var(--bg-primary); border-color: var(--accent); }
         .action-btn.copy-success { background: var(--success); color: white; border-color: var(--success); }
+        /* 通用按钮系统 (借鉴 v2) */
+        .btn-primary { padding: 7px 14px; background: var(--accent); color: var(--bg-primary); border: none; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.12s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-ghost { padding: 7px 12px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); border-radius: 6px; font-size: 0.76rem; cursor: pointer; font-family: inherit; transition: all 0.12s; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-ghost:hover { color: var(--accent); border-color: var(--accent); }
+        /* 侧边栏折叠 (借鉴 v2 — 桌面端可整栏折叠) */
+        .sidebar-collapse-btn { width: 26px; height: 26px; border-radius: 5px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; padding: 0; display: none; align-items: center; justify-content: center; font-size: 0.9rem; transition: all 0.12s; flex-shrink: 0; }
+        .sidebar-collapse-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .sidebar-open-btn { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; position: fixed; top: 16px; left: 16px; z-index: 95; transition: all 0.12s; }
+        .sidebar-open-btn:hover { color: var(--accent); border-color: var(--accent); }
+        body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
+        body.sidebar-collapsed .container { margin-left: 0 !important; max-width: 100% !important; }
+        body.sidebar-collapsed .sidebar-open-btn { display: inline-flex; }
+        body.sidebar-collapsed .sidebar-handle { display: none; }
+        /* Chat 细节动画 (借鉴 v2) */
+        @keyframes dot-bounce { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-4px); opacity: 1; } }
+        .chat-loading { display: inline-flex; gap: 3px; align-items: center; padding: 4px 0; }
+        .chat-loading-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: dot-bounce 1.2s infinite; }
+        .chat-loading-dot:nth-child(2) { animation-delay: 0.15s; }
+        .chat-loading-dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes chat-msg-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .chat-msg { animation: chat-msg-in 0.25s ease; }
+        .chat-launcher-glow { transition: opacity 0.25s; }
         .empty-state { text-align: center; padding: 60px 20px; }
         .empty-icon { font-size: 4rem; margin-bottom: 16px; opacity: 0.5; }
         .empty-title { font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 8px; }
@@ -684,7 +691,11 @@
             .sidebar { transform: translateX(0); }
             .sidebar-close { display: none; }
             .sidebar-handle { display: none; }
+            .sidebar-collapse-btn { display: inline-flex; }
             .container { margin-left: 240px; max-width: calc(100% - 280px); }
+        }
+        @media (max-width: 768px) {
+            .sidebar-collapse-btn { display: none; }
         }
     </style>
 </head>
@@ -720,6 +731,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-title">📂 知识库</div>
+            <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="折叠侧边栏" title="折叠侧边栏">◀</button>
             <button class="sidebar-close" id="sidebarClose" aria-label="关闭">✕</button>
         </div>
         <nav class="sidebar-nav" id="sidebarNav"></nav>
@@ -730,6 +742,7 @@
         </div>
     </aside>
     <button class="sidebar-handle" id="sidebarHandle" aria-label="打开菜单">☰</button>
+    <button class="sidebar-open-btn" id="sidebarOpenBtn" aria-label="展开侧边栏">☰</button>
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <div class="container">
         <header>
@@ -739,16 +752,7 @@
             </div>
             <p class="subtitle">快速搜索本地话术和公告 · 支持繁简中文</p>
         </header>
-        <div class="quicklinks">
-            <a class="quicklink-card" href="https://ark-library.com/cn" target="_blank" rel="noopener">
-                <div class="quicklink-icon">📚</div>
-                <div class="quicklink-text">
-                    <div class="quicklink-title">ARK 资料库</div>
-                    <div class="quicklink-sub">官方文档网站</div>
-                </div>
-                <span class="quicklink-arrow">→</span>
-            </a>
-        </div>
+
         <div class="search-container">
             <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
             <input type="text" class="search-box" id="searchInput" placeholder="输入关键词搜索，或输入 #标签 筛选...">
@@ -759,11 +763,7 @@
         <!-- 拖动小按钮（默认右下角） -->
         <div class="chat-launcher" id="chatLauncher" title="AI 客服助手 · 拖动移动 / 点击展开">
             <div class="chat-launcher-glow"></div>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M3 12 L12 3 L21 12 L12 21 Z" fill="#0a0a0f" opacity="0.18"/>
-                <path d="M6 12 L12 6 L18 12 L12 18 Z" fill="#0a0a0f"/>
-                <path d="M12 6 L18 12 M12 6 L6 12 M6 12 L12 18 M18 12 L12 18" stroke="#0a0a0f" stroke-width="0.6" opacity="0.4"/>
-            </svg>
+            <img class="chat-launcher-img" src="images/chat-launcher-pil-224.png" alt="AI 客服助手" draggable="false" />
         </div>
 
         <!-- 黑色遮罩（点击抽屉外区域收起） -->
@@ -851,7 +851,7 @@
         }
 
         let allRecords = []; let fuse = null; let currentTag = null; let currentCategory = 'all'; let favorites = new Set(); let loadStartTime = 0; let segmenter = null;
-        const PLACEHOLDERS = ['输入关键词搜索，如 "质押教程"', '输入 #标签 筛选，如 #活动', '可直接粘贴任意网址搜索，如 https://example.com/xxx', '支持繁体中文，如 "錢包"'];
+        const PLACEHOLDERS = ['输入关键词搜索，如 "质押教程"', '输入 #标签 筛选，如 #活动', '支持繁体中文，如 "錢包"'];
         let placeholderIndex = 0; let searchInput;
         // 知识库文件清单（按分类）
         const FILES = ['活动公告.txt', '提案政策.txt', '工作室事务.txt', '常用话术.txt', '产品操作.txt', '常见FAQ.txt', '地址合约.txt', '最新动态.txt'];
@@ -928,8 +928,7 @@
                 .slice(0, 6)
                 .map(([word]) => word);
             const tagsBar = document.getElementById('tagsBar');
-            tagsBar.innerHTML = '<button class="tag-btn active" data-tag="">全部</button>' +
-                sorted.map(word => `<button class="tag-btn" data-tag="${escapeHTML(word)}">${escapeHTML(word)}</button>`).join('');
+            tagsBar.innerHTML = '';
             attachTagListeners();
         }
         function attachTagListeners() {
@@ -1138,6 +1137,7 @@
             container.innerHTML = htmlResults.join('');
             attachResultListeners();
             attachTreeListeners();
+            attachExpandListeners();
         }
         // 单条子卡片（挂在主条目卡片下）
         function createChildResultHTML(child) {
@@ -1233,12 +1233,19 @@
             document.getElementById('resultsCount').textContent = `找到 ${total} 条结果`;
             container.innerHTML = htmlParts.join('');
             attachResultListeners();
+            attachExpandListeners();
         }
         function createResultHTML(record, query, index, childLookup = null) {
             let answerHtml = processAnswer(record.answer);
             if (query && query.trim() && !query.startsWith('#')) {
                 answerHtml = highlightInHtml(answerHtml, query);
             }
+            // 渐进式披露：默认折叠前 6 行（按换行符粗略计算 + 字符数兜底）
+            const lineCount = (record.answer.match(/\n/g) || []).length + 1;
+            const charCount = record.answer.length;
+            const isLong = lineCount > 6 || charCount > 280;
+            const answerCls = isLong ? 'result-answer collapsed' : 'result-answer';
+            const expandBtn = isLong ? `<button class="result-expand-btn" data-action="expand"><span class="expand-label">展开查看全文</span><span class="arrow">▾</span></button>` : '';
             const keywordsHTML = record.keywords.slice(0, 5).map(k => `<span class="keyword-tag">${escapeHTML(k)}</span>`).join('');
             const linkHTML = record.link ? `<a href="${escapeHTML(record.link)}" target="_blank" rel="noopener">🔗 查看链接</a>` : '';
             const isFav = favorites.has(record.id);
@@ -1250,9 +1257,32 @@
                 : '';
             // 主条目标签前多加一个 ⭐ 标识，方便一眼看出
             const mainTag = (record.childIds && record.childIds.length > 0)
-                ? `<span class="tag" style="background:rgba(238, 183, 38, 0.15);color:var(--accent);font-weight:600;">⭐ 主条目</span>`
+                ? `<span class="tag main-tag">⭐ 主条目</span>`
                 : '';
-            return `<div class="result-item ${record.childIds && record.childIds.length > 0 ? 'result-item-main' : ''}" style="animation-delay: ${Math.min(index, 12) * 0.05}s" data-id="${record.id}"><div class="result-header"><div class="result-meta">${mainTag}${record.tags.map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}</div><div class="result-header-right"><span class="source-file">📄 ${escapeHTML(record.sourceFile)}</span><button class="fav-btn ${isFav ? 'active' : ''}" data-id="${record.id}" title="${isFav ? '取消收藏' : '收藏'}">${favIcon}</button></div></div>${imageHtml}<div class="result-answer">${answerHtml}</div><div class="result-footer"><div class="keywords">${keywordsHTML}</div><div class="action-btns">${linkHTML}<button class="action-btn copy-btn" data-answer="${escapeAttr(record.answer)}">📋 复制答案</button></div></div>${treeHtml}</div>`;
+            return `<div class="result-item ${record.childIds && record.childIds.length > 0 ? 'result-item-main' : ''}" style="animation-delay: ${Math.min(index, 12) * 0.05}s" data-id="${record.id}"><div class="result-header"><div class="result-meta">${mainTag}${record.tags.map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}</div><div class="result-header-right"><span class="source-file">📄 ${escapeHTML(record.sourceFile)}</span><button class="fav-btn ${isFav ? 'active' : ''}" data-id="${record.id}" title="${isFav ? '取消收藏' : '收藏'}">${favIcon}</button></div></div>${imageHtml}<div class="${answerCls}">${answerHtml}</div>${expandBtn}<div class="result-footer"><div class="keywords">${keywordsHTML}</div><div class="action-btns">${linkHTML}<button class="action-btn copy-btn" data-answer="${escapeAttr(record.answer)}">📋 复制答案</button></div></div>${treeHtml}</div>`;
+        }
+        // 渐进式披露：展开/收起按钮
+        function attachExpandListeners() {
+            document.querySelectorAll('.result-expand-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const item = btn.closest('.result-item');
+                    const answer = item.querySelector('.result-answer');
+                    const label = btn.querySelector('.expand-label');
+                    const arrow = btn.querySelector('.arrow');
+                    if (answer.classList.contains('collapsed')) {
+                        answer.classList.remove('collapsed');
+                        answer.classList.add('expanded');
+                        label.textContent = '收起';
+                        arrow.textContent = '▴';
+                    } else {
+                        answer.classList.add('collapsed');
+                        answer.classList.remove('expanded');
+                        label.textContent = '展开查看全文';
+                        arrow.textContent = '▾';
+                    }
+                });
+            });
         }
         // 简单 MD5（用于记录 ID）
         function md5(str) {
@@ -1429,6 +1459,26 @@
             document.getElementById('sidebar').classList.remove('open');
             document.getElementById('sidebarBackdrop').classList.remove('show');
         }
+        // ============ 桌面端侧边栏折叠 (借鉴 v2 — body.sidebar-collapsed) ============
+        const SIDEBAR_COLLAPSED_KEY = 'ark_sidebar_collapsed_v1';
+        function applySidebarCollapsed(collapsed) {
+            if (collapsed) {
+                document.body.classList.add('sidebar-collapsed');
+            } else {
+                document.body.classList.remove('sidebar-collapsed');
+            }
+        }
+        function toggleSidebarCollapsed() {
+            const isCollapsed = !document.body.classList.contains('sidebar-collapsed');
+            applySidebarCollapsed(isCollapsed);
+            try { localStorage.setItem(SIDEBAR_COLLAPSED_KEY, isCollapsed ? '1' : '0'); } catch (e) {}
+        }
+        function initSidebarCollapsed() {
+            try {
+                const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+                if (stored === '1') applySidebarCollapsed(true);
+            } catch (e) {}
+        }
         function openImageModal(src) {
             let modal = document.getElementById('imageModal');
             if (!modal) {
@@ -1486,6 +1536,12 @@
             document.getElementById('sidebarHandle').addEventListener('click', openSidebar);
             document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
             document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
+            // 侧边栏：桌面端折叠
+            initSidebarCollapsed();
+            const collapseBtn = document.getElementById('sidebarCollapseBtn');
+            if (collapseBtn) collapseBtn.addEventListener('click', toggleSidebarCollapsed);
+            const openBtn = document.getElementById('sidebarOpenBtn');
+            if (openBtn) openBtn.addEventListener('click', () => applySidebarCollapsed(false));
             setInterval(cyclePlaceholder, 3000); cyclePlaceholder();
             refreshResults();
             document.getElementById('versionTimestamp').textContent = `数据版本: ${new Date().toLocaleString('zh-CN')}`;
