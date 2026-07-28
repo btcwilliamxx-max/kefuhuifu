@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
     <style>
         :root {
             --bg-primary: #141319;                                   /* ARK 官方主背景 */
@@ -2018,7 +2019,23 @@
     </script>
     <button class="back-to-top" id="backToTop" title="回到顶部" aria-label="回到顶部">↑</button>
     <script>
-        // IIFE 必须等 DOM 解析完才跑 → 单独 script 块, 浏览器自动延迟到 </body> 前执行
+        // Lenis 丝滑滚动
+        const lenis = new Lenis({
+            duration: 1.1,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            touchMultiplier: 2,
+            infinite: false,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Lenis scroll event → back-to-top
         (function() {
             const btn = document.getElementById('backToTop');
             if (!btn) { console.warn('[back-to-top] button not found'); return; }
@@ -2033,12 +2050,12 @@
                     ticking = true;
                 }
             };
-            window.addEventListener('scroll', onScroll, { passive: true });
+            lenis.on('scroll', onScroll);
             btn.addEventListener('click', () => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                lenis.scrollTo(0, { duration: 0.8, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
             });
             onScroll();
-            console.log('[back-to-top] initialized, scrollY=' + window.scrollY);
+            console.log('[back-to-top] initialized with Lenis, scrollY=' + window.scrollY);
         })();
     </script>
 </body>
