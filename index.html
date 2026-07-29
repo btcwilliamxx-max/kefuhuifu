@@ -276,11 +276,11 @@
             padding: 8px 10px;
         }
         .chat-msg-refs summary {
-            cursor: pointer; font-size: 0.74rem;
-            color: var(--text-secondary); font-weight: 500;
+            cursor: pointer; font-size: 0.76rem;
+            color: var(--accent); font-weight: 600;
             user-select: none;
         }
-        .chat-msg-refs summary:hover { color: var(--accent); }
+        .chat-msg-refs summary:hover { color: var(--accent-hover); }
         .chat-msg-ref-item {
             margin-top: 6px; padding-top: 6px;
             border-top: 1px dashed var(--line);
@@ -479,6 +479,8 @@
         }
         .back-to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
         .back-to-top:hover { background: #5ee5ff; transform: translateY(-2px); }
+        /* Chat drawer 打开时隐藏回顶按钮（避免遮挡发送按钮） */
+        body.chat-open .back-to-top { display: none; }
 
         /* 登录遮罩 */
         .login-overlay {
@@ -1721,11 +1723,13 @@
         function openDrawer() {
             chatDrawer.classList.add('show');
             chatBackdrop.classList.add('show');
+            document.body.classList.add('chat-open');
             setTimeout(() => chatInput.focus(), 320);
         }
         function closeDrawer() {
             chatDrawer.classList.remove('show');
             chatBackdrop.classList.remove('show');
+            document.body.classList.remove('chat-open');
         }
         function toggleDrawer() {
             if (chatDrawer.classList.contains('show')) closeDrawer();
@@ -1903,11 +1907,11 @@
             const label = role === 'user' ? '你' : 'AI 助手';
             let refsHtml = '';
             if (role === 'assistant' && m.refs && m.refs.length > 0) {
-                refsHtml = `<details class="chat-msg-refs">
-                    <summary>📚 相关话术（${m.refs.length} 条）</summary>
+                refsHtml = `<details class="chat-msg-refs" open>
+                    <summary>📚 公告原文（${m.refs.length} 条 · 客服核对请以此为准）</summary>
                     ${m.refs.map(r => `<div class="chat-msg-ref-item">
                         <div class="chat-msg-ref-title">${escapeHTML((r.keywords || []).slice(0, 6).join(' '))}</div>
-                        <div>${escapeHTML(r.answer.length > 280 ? r.answer.slice(0, 280) + '...' : r.answer)}</div>
+                        <div>${escapeHTML(r.answer)}</div>
                     </div>`).join('')}
                 </details>`;
             }
