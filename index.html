@@ -72,6 +72,26 @@
         }
         h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, #fff 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .subtitle { color: var(--text-secondary); font-size: 0.95rem; margin-top: 8px; }
+        .quicklinks {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+            margin: 16px 0 0;
+        }
+        .quicklink-card {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 1px solid var(--border); border-radius: 14px;
+            color: var(--text-primary); text-decoration: none;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+        }
+        .quicklink-card:hover {
+            border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+        .quicklink-icon { font-size: 1.6rem; }
+        .quicklink-text { display: flex; flex-direction: column; }
+        .quicklink-title { font-weight: 600; font-size: 0.95rem; }
+        .quicklink-sub { color: var(--text-muted); font-size: 0.8rem; margin-top: 2px; }
 
         /* === Chat（浮动小按钮 + 抽屉，与 ARK 官方风格一致） === */
         /* 方案 B：金色背景 + 圆形裁切 */
@@ -754,6 +774,15 @@
                 <h1>ARK 客服知识库</h1>
             </div>
             <p class="subtitle">快速搜索本地话术和公告 · 支持繁简中文</p>
+            <div class="quicklinks">
+                <a class="quicklink-card" href="https://ark-library.com/cn" target="_blank" rel="noopener">
+                    <div class="quicklink-icon">📚</div>
+                    <div class="quicklink-text">
+                        <div class="quicklink-title">ARK 资料库</div>
+                        <div class="quicklink-sub">官方文档网站</div>
+                    </div>
+                </a>
+            </div>
         </header>
 
         <div class="search-container">
