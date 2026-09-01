@@ -905,6 +905,7 @@
             '最新动态':     { icon: '📢', label: '最新动态', filter: 'category' },
             '阿奇AI':      { icon: '🤖', label: '阿奇 AI', filter: 'tag', tag: '#阿奇AI' },
             'VISA':        { icon: '💳', label: 'VISA', filter: 'tag', tag: '#VISA' },
+            'ARKIE':       { icon: '🪙', label: 'ARKIE', filter: 'tag', tag: '#ARKIE' },
             'favorites':   { icon: '⭐', label: '我的收藏', filter: 'favorites' }
         };
         async function initOpenCC() {
@@ -1412,7 +1413,7 @@
             const nav = document.getElementById('sidebarNav');
             const counts = countByCategory();
             // 分类列表
-            const cats = ['all', '活动公告', '提案政策', '工作室事务', '常用话术', '产品操作', '常见FAQ', '地址合约', '最新动态', '阿奇AI', 'VISA'];
+            const cats = ['all', '活动公告', '提案政策', '工作室事务', '常用话术', '产品操作', '常见FAQ', '地址合约', '最新动态', '阿奇AI', 'VISA', 'ARKIE'];
             const items = cats.map(cat => {
                 const meta = CATEGORY_META[cat];
                 const count = cat === 'all' ? allRecords.length : (counts[cat] || 0);
@@ -1445,7 +1446,7 @@
                 // tag-based 分类（#阿奇AI / #VISA 等）也统计计数
                 if (r.tags && r.tags.length) {
                     for (const t of r.tags) {
-                        if (t === '#阿奇AI' || t === '#VISA') {
+                        if (t === '#阿奇AI' || t === '#VISA' || t === '#ARKIE') {
                             counts[t.slice(1)] = (counts[t.slice(1)] || 0) + 1;
                         }
                     }
@@ -1468,6 +1469,8 @@
                 list = list.filter(r => r.tags && r.tags.includes('#阿奇AI'));
             } else if (currentCategory === 'VISA') {
                 list = list.filter(r => r.tags && r.tags.includes('#VISA'));
+            } else if (currentCategory === 'ARKIE') {
+                list = list.filter(r => r.tags && r.tags.includes('#ARKIE'));
             } else if (currentCategory !== 'all') {
                 list = list.filter(r => r.category === currentCategory);
             }
